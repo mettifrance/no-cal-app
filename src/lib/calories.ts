@@ -42,7 +42,7 @@ const FOOD_ESTIMATES: Record<string, number> = {
   burger: 600,
   tiramisu: 450,
   cake: 400,
-  ice cream: 300,
+  'ice cream': 300,
   gelato: 300,
   chocolate: 250,
   dessert: 400,
