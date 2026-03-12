@@ -1,13 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { getProfile, clearProfile, UserProfile } from '@/lib/store';
+import Onboarding from '@/components/Onboarding';
+import WeeklyDashboard from '@/components/WeeklyDashboard';
 
 const Index = () => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setProfile(getProfile());
+    setLoading(false);
+  }, []);
+
+  if (loading) return null;
+
+  if (!profile) {
+    return <Onboarding onComplete={(p) => setProfile(p)} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <WeeklyDashboard
+      profile={profile}
+      onReset={() => {
+        clearProfile();
+        setProfile(null);
+      }}
+    />
   );
 };
 
