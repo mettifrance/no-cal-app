@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getDayName, estimateExtraCalories } from '@/lib/calories';
+import { getDayName } from '@/lib/calories';
 import { saveDayLog } from '@/lib/store';
 
 interface DayCheckInProps {
@@ -17,11 +17,6 @@ type CheckInStep = 'question' | 'indulgence' | 'result';
 export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose }: DayCheckInProps) {
   const [step, setStep] = useState<CheckInStep>('question');
   const [indulgenceText, setIndulgenceText] = useState('');
-  const [result, setResult] = useState<{
-    extraCalories: number;
-    breakdown: { item: string; kcal: number }[];
-    total: number;
-  } | null>(null);
 
   function handleOnTarget() {
     saveDayLog({
@@ -34,18 +29,14 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
 
   function handleIndulgenceSubmit() {
     if (!indulgenceText.trim()) return;
-    const estimate = estimateExtraCalories(indulgenceText);
-    const total = dailyTarget + estimate.total;
 
     saveDayLog({
       dayIndex,
       onTarget: false,
       indulgenceDescription: indulgenceText,
-      extraCalories: estimate.total,
-      estimatedConsumption: total,
+      estimatedConsumption: dailyTarget,
     });
 
-    setResult({ extraCalories: estimate.total, breakdown: estimate.breakdown, total });
     setStep('result');
   }
 
@@ -69,7 +60,7 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
             <div className="text-center">
               <h3 className="text-xl font-serif mb-2">{getDayName(dayIndex)}</h3>
               <p className="text-muted-foreground">
-                Were you roughly within your calorie target today?
+                Did today feel aligned with your plan?
               </p>
             </div>
 
@@ -79,7 +70,7 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
                 className="w-full rounded-xl py-5"
                 onClick={handleOnTarget}
               >
-                ✅ Yes, I stayed within my target
+                ✅ Yes, today felt aligned
               </Button>
               <Button
                 size="lg"
@@ -87,7 +78,7 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
                 className="w-full rounded-xl py-5"
                 onClick={() => setStep('indulgence')}
               >
-                🍕 No, I had an indulgent meal
+                🍰 I had an indulgent meal
               </Button>
             </div>
 
@@ -100,14 +91,14 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
         {step === 'indulgence' && (
           <>
             <div className="text-center">
-              <h3 className="text-xl font-serif mb-2">What did you have?</h3>
+              <h3 className="text-xl font-serif mb-2">What did you enjoy?</h3>
               <p className="text-muted-foreground text-sm">
-                No judgment — just describe it briefly so we can estimate.
+                No judgment — just a quick note for your awareness.
               </p>
             </div>
 
             <Input
-              placeholder="e.g. pizza and beer, restaurant dinner..."
+              placeholder="e.g. pizza night, restaurant dinner..."
               value={indulgenceText}
               onChange={(e) => setIndulgenceText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleIndulgenceSubmit()}
@@ -124,36 +115,22 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
                 disabled={!indulgenceText.trim()}
                 className="flex-1 rounded-xl"
               >
-                Estimate Calories
+                Log It
               </Button>
             </div>
           </>
         )}
 
-        {step === 'result' && result && (
+        {step === 'result' && (
           <>
             <div className="text-center">
-              <div className="text-4xl mb-3">📊</div>
-              <h3 className="text-xl font-serif mb-2">Got it!</h3>
-            </div>
-
-            <div className="bg-card rounded-xl p-4 border space-y-2">
-              {result.breakdown.map((item, i) => (
-                <div key={i} className="flex justify-between text-sm">
-                  <span className="capitalize">{item.item}</span>
-                  <span className="text-muted-foreground">+{item.kcal} kcal</span>
-                </div>
-              ))}
-              <div className="border-t pt-2 flex justify-between font-medium">
-                <span>Extra calories</span>
-                <span className="text-accent">+{result.extraCalories.toLocaleString()} kcal</span>
-              </div>
+              <div className="text-4xl mb-3">🌿</div>
+              <h3 className="text-xl font-serif mb-2">Noted!</h3>
             </div>
 
             <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
               <p className="text-sm text-center leading-relaxed">
-                We estimate this added about <strong>{result.extraCalories.toLocaleString()} kcal</strong> extra. 
-                Remember, it's the weekly balance that counts — one indulgent meal doesn't define your week. 💪
+                A little flexibility is part of real life. What matters is your overall weekly rhythm. 💪
               </p>
             </div>
 
