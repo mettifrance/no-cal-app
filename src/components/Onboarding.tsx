@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ActivityLevel, Gender, Goal } from '@/lib/calories';
-import { saveProfile, UserProfile } from '@/lib/store';
+import { saveProfileToCloud, UserProfile } from '@/lib/store';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
@@ -14,6 +16,8 @@ const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'result'] as con
 type Step = typeof STEPS[number];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [step, setStep] = useState<Step>('welcome');
   const [gender, setGender] = useState<Gender>('male');
   const [age, setAge] = useState('');
@@ -22,21 +26,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderately_active');
   const [goal, setGoal] = useState<Goal>('awareness');
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const stepIndex = STEPS.indexOf(step);
 
-  function next() {
+  async function next() {
     if (stepIndex < STEPS.length - 1) {
       if (step === 'goal') {
-        const p = saveProfile({
-          age: parseInt(age),
-          gender,
-          height: parseInt(height),
-          weight: parseInt(weight),
-          activityLevel,
-          goal,
-        });
-        setProfile(p);
+        if (!user) return;
+        setSaving(true);
+        try {
+          const p = await saveProfileToCloud(user.id, {
+            age: parseInt(age),
+            gender,
+            height: parseInt(height),
+            weight: parseInt(weight),
+            activityLevel,
+            goal,
+          });
+          setProfile(p);
+        } catch (err: any) {
+          toast({ title: 'Error saving profile', description: err.message, variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
+        setSaving(false);
       }
       setStep(STEPS[stepIndex + 1]);
     }
@@ -63,7 +77,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Progress dots */}
         {step !== 'welcome' && (
           <div className="flex justify-center gap-2 mb-8">
             {STEPS.slice(1).map((s, i) => (
@@ -105,7 +118,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <h2 className="text-2xl font-serif mb-2">About You</h2>
                   <p className="text-muted-foreground">Just a few basics to personalize your experience.</p>
                 </div>
-
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium mb-3 block">Gender</Label>
@@ -125,7 +137,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <Label htmlFor="age">Age</Label>
                     <Input
@@ -138,7 +149,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     />
                   </div>
                 </div>
-
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
                   <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">Continue</Button>
@@ -152,32 +162,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <h2 className="text-2xl font-serif mb-2">Your Body</h2>
                   <p className="text-muted-foreground">This helps us understand your unique rhythm.</p>
                 </div>
-
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      placeholder="e.g. 175"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      className="mt-1 rounded-xl h-12 text-lg"
-                    />
+                    <Input id="height" type="number" placeholder="e.g. 175" value={height} onChange={(e) => setHeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
                   </div>
                   <div>
                     <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      placeholder="e.g. 75"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      className="mt-1 rounded-xl h-12 text-lg"
-                    />
+                    <Input id="weight" type="number" placeholder="e.g. 75" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
                   </div>
                 </div>
-
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
                   <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">Continue</Button>
@@ -191,7 +185,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <h2 className="text-2xl font-serif mb-2">Activity Level</h2>
                   <p className="text-muted-foreground">How active are you on a typical week?</p>
                 </div>
-
                 <div className="space-y-3">
                   {([
                     { value: 'sedentary', label: 'Sedentary', desc: 'Desk job, little exercise', emoji: '🪑' },
@@ -218,10 +211,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </button>
                   ))}
                 </div>
-
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">{saving ? 'Saving...' : 'Continue'}</Button>
                 </div>
               </div>
             )}
@@ -232,7 +224,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <h2 className="text-2xl font-serif mb-2">Your Goal</h2>
                   <p className="text-muted-foreground">What would you like to achieve?</p>
                 </div>
-
                 <div className="space-y-3">
                   {([
                     { value: 'lose_weight', label: 'Lose Weight', desc: 'Build a sustainable deficit', emoji: '📉' },
@@ -258,10 +249,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </button>
                   ))}
                 </div>
-
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                  <Button onClick={next} disabled={saving} className="flex-1 rounded-xl">{saving ? 'Saving...' : 'Continue'}</Button>
                 </div>
               </div>
             )}
@@ -275,7 +265,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     We now understand your rhythm and your goal.
                   </p>
                 </div>
-
                 <div className="bg-card rounded-2xl p-6 space-y-4 border">
                   <div className="text-center space-y-3">
                     <div className="text-4xl">🌿</div>
@@ -287,13 +276,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </p>
                   </div>
                 </div>
-
                 <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20">
                   <p className="text-sm text-center leading-relaxed">
                     💡 Small, consistent habits create lasting results. We'll help you see the bigger picture — week by week.
                   </p>
                 </div>
-
                 <Button size="lg" className="w-full text-lg py-6 rounded-2xl" onClick={() => onComplete(profile)}>
                   Start My Week
                 </Button>
