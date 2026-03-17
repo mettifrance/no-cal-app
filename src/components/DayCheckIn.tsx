@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getDayName } from '@/lib/calories';
-import { saveDayLog } from '@/lib/store';
+import { saveDayLogToCloud } from '@/lib/store';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DayCheckInProps {
   dayIndex: number;
@@ -15,28 +16,33 @@ interface DayCheckInProps {
 type CheckInStep = 'question' | 'indulgence' | 'result';
 
 export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose }: DayCheckInProps) {
+  const { user } = useAuth();
   const [step, setStep] = useState<CheckInStep>('question');
   const [indulgenceText, setIndulgenceText] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  function handleOnTarget() {
-    saveDayLog({
+  async function handleOnTarget() {
+    if (!user) return;
+    setSaving(true);
+    await saveDayLogToCloud(user.id, {
       dayIndex,
       onTarget: true,
       estimatedConsumption: dailyTarget,
     });
+    setSaving(false);
     onComplete();
   }
 
-  function handleIndulgenceSubmit() {
-    if (!indulgenceText.trim()) return;
-
-    saveDayLog({
+  async function handleIndulgenceSubmit() {
+    if (!indulgenceText.trim() || !user) return;
+    setSaving(true);
+    await saveDayLogToCloud(user.id, {
       dayIndex,
       onTarget: false,
       indulgenceDescription: indulgenceText,
       estimatedConsumption: dailyTarget,
     });
-
+    setSaving(false);
     setStep('result');
   }
 
@@ -59,32 +65,17 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
           <>
             <div className="text-center">
               <h3 className="text-xl font-serif mb-2">{getDayName(dayIndex)}</h3>
-              <p className="text-muted-foreground">
-                Did today feel aligned with your plan?
-              </p>
+              <p className="text-muted-foreground">Did today feel aligned with your plan?</p>
             </div>
-
             <div className="space-y-3">
-              <Button
-                size="lg"
-                className="w-full rounded-xl py-5"
-                onClick={handleOnTarget}
-              >
-                ✅ Yes, today felt aligned
+              <Button size="lg" className="w-full rounded-xl py-5" onClick={handleOnTarget} disabled={saving}>
+                {saving ? 'Saving...' : '✅ Yes, today felt aligned'}
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full rounded-xl py-5"
-                onClick={() => setStep('indulgence')}
-              >
+              <Button size="lg" variant="outline" className="w-full rounded-xl py-5" onClick={() => setStep('indulgence')}>
                 🍰 I had an indulgent meal
               </Button>
             </div>
-
-            <button onClick={onClose} className="w-full text-center text-sm text-muted-foreground">
-              Skip for now
-            </button>
+            <button onClick={onClose} className="w-full text-center text-sm text-muted-foreground">Skip for now</button>
           </>
         )}
 
@@ -92,11 +83,8 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
           <>
             <div className="text-center">
               <h3 className="text-xl font-serif mb-2">What did you enjoy?</h3>
-              <p className="text-muted-foreground text-sm">
-                No judgment — just a quick note for your awareness.
-              </p>
+              <p className="text-muted-foreground text-sm">No judgment — just a quick note for your awareness.</p>
             </div>
-
             <Input
               placeholder="e.g. pizza night, restaurant dinner..."
               value={indulgenceText}
@@ -105,17 +93,10 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
               className="rounded-xl h-12 text-lg"
               autoFocus
             />
-
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep('question')} className="rounded-xl">
-                Back
-              </Button>
-              <Button
-                onClick={handleIndulgenceSubmit}
-                disabled={!indulgenceText.trim()}
-                className="flex-1 rounded-xl"
-              >
-                Log It
+              <Button variant="outline" onClick={() => setStep('question')} className="rounded-xl">Back</Button>
+              <Button onClick={handleIndulgenceSubmit} disabled={!indulgenceText.trim() || saving} className="flex-1 rounded-xl">
+                {saving ? 'Saving...' : 'Log It'}
               </Button>
             </div>
           </>
@@ -127,20 +108,12 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
               <div className="text-4xl mb-3">🌿</div>
               <h3 className="text-xl font-serif mb-2">Noted!</h3>
             </div>
-
             <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
               <p className="text-sm text-center leading-relaxed">
                 A little flexibility is part of real life. What matters is your overall weekly rhythm. 💪
               </p>
             </div>
-
-            <Button
-              size="lg"
-              className="w-full rounded-xl"
-              onClick={onComplete}
-            >
-              Done
-            </Button>
+            <Button size="lg" className="w-full rounded-xl" onClick={onComplete}>Done</Button>
           </>
         )}
       </motion.div>
