@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          indulgence_description: string | null
+          on_target: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          indulgence_description?: string | null
+          on_target: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          indulgence_description?: string | null
+          on_target?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string
+          age: number
+          created_at: string
+          daily_target: number
+          gender: string
+          goal: string
+          height: number
+          id: string
+          updated_at: string
+          user_id: string
+          weekly_target: number
+          weight: number
+        }
+        Insert: {
+          activity_level: string
+          age: number
+          created_at?: string
+          daily_target: number
+          gender: string
+          goal: string
+          height: number
+          id?: string
+          updated_at?: string
+          user_id: string
+          weekly_target: number
+          weight: number
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          created_at?: string
+          daily_target?: number
+          gender?: string
+          goal?: string
+          height?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+          weekly_target?: number
+          weight?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
