@@ -28,7 +28,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   function next() {
     if (stepIndex < STEPS.length - 1) {
       if (step === 'goal') {
-        // Calculate and show result
         const p = saveProfile({
           age: parseInt(age),
           gender,
@@ -89,10 +88,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           >
             {step === 'welcome' && (
               <div className="text-center space-y-6">
-                <div className="text-6xl mb-4">🥗</div>
+                <div className="text-6xl mb-4">🌿</div>
                 <h1 className="text-4xl font-serif">No More Cal</h1>
                 <p className="text-muted-foreground text-lg leading-relaxed">
-                  Understand your weekly calorie balance without tracking every meal. Simple, supportive, and judgment-free.
+                  Your weekly nutrition awareness coach. Stay consistent, stay balanced — without tracking every meal.
                 </p>
                 <Button size="lg" className="w-full text-lg py-6 rounded-2xl" onClick={next}>
                   Get Started
@@ -151,7 +150,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-2xl font-serif mb-2">Your Body</h2>
-                  <p className="text-muted-foreground">This helps us estimate your calorie needs.</p>
+                  <p className="text-muted-foreground">This helps us understand your unique rhythm.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -236,9 +235,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
                 <div className="space-y-3">
                   {([
-                    { value: 'lose_weight', label: 'Lose Weight', desc: 'Gentle calorie deficit', emoji: '📉' },
-                    { value: 'maintain', label: 'Maintain Weight', desc: 'Stay at your current weight', emoji: '⚖️' },
-                    { value: 'awareness', label: 'Improve Awareness', desc: 'Just understand your eating patterns', emoji: '🧠' },
+                    { value: 'lose_weight', label: 'Lose Weight', desc: 'Build a sustainable deficit', emoji: '📉' },
+                    { value: 'maintain', label: 'Maintain Weight', desc: 'Stay balanced and consistent', emoji: '⚖️' },
+                    { value: 'awareness', label: 'Improve Awareness', desc: 'Understand your eating patterns', emoji: '🧠' },
                   ] as { value: Goal; label: string; desc: string; emoji: string }[]).map((opt) => (
                     <button
                       key={opt.value}
@@ -271,27 +270,27 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="text-5xl mb-4">✨</div>
-                  <h2 className="text-2xl font-serif mb-2">Your Plan is Ready</h2>
-                  <p className="text-muted-foreground">Here's your personalized calorie budget.</p>
+                  <h2 className="text-2xl font-serif mb-2">You're All Set</h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                    We now understand your rhythm and your goal.
+                  </p>
                 </div>
 
                 <div className="bg-card rounded-2xl p-6 space-y-4 border">
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground uppercase tracking-wide">Daily Target</div>
-                    <div className="text-4xl font-serif text-primary">{profile.dailyTarget.toLocaleString()}</div>
-                    <div className="text-muted-foreground">kcal per day</div>
-                  </div>
-                  <div className="border-t pt-4 text-center">
-                    <div className="text-sm text-muted-foreground uppercase tracking-wide">Weekly Budget</div>
-                    <div className="text-3xl font-serif">{profile.weeklyTarget.toLocaleString()}</div>
-                    <div className="text-muted-foreground">kcal per week</div>
+                  <div className="text-center space-y-3">
+                    <div className="text-4xl">🌿</div>
+                    <p className="text-foreground leading-relaxed">
+                      The app will help you stay consistent during the week with simple daily check-ins.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      No calorie counting. No meal logging. Just awareness.
+                    </p>
                   </div>
                 </div>
 
                 <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20">
                   <p className="text-sm text-center leading-relaxed">
-                    💡 Your body responds to <strong>weekly energy balance</strong>, not just daily meals. 
-                    An occasional indulgence is fine — what matters is the bigger picture.
+                    💡 Small, consistent habits create lasting results. We'll help you see the bigger picture — week by week.
                   </p>
                 </div>
 

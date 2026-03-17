@@ -1,10 +1,10 @@
-import { Gender, ActivityLevel, Goal, calculateBMR, calculateDailyTarget, calculateWeeklyTarget, getWeekStartDate } from './calories';
+import { Gender, ActivityLevel, Goal, calculateBMR, calculateDailyTarget, calculateWeeklyTarget, getWeekStartDate, getCurrentDayIndex } from './calories';
 
 export interface UserProfile {
   age: number;
   gender: Gender;
-  height: number; // cm
-  weight: number; // kg
+  height: number;
+  weight: number;
   activityLevel: ActivityLevel;
   goal: Goal;
   dailyTarget: number;
@@ -20,12 +20,20 @@ export interface DayLog {
 }
 
 export interface WeekData {
-  weekStart: string; // ISO date string
+  weekStart: string;
   logs: DayLog[];
+}
+
+// Flat log entry with a date key for monthly calendar
+export interface DayLogEntry {
+  dateKey: string; // YYYY-MM-DD
+  onTarget: boolean;
+  indulgenceDescription?: string;
 }
 
 const PROFILE_KEY = 'nomorecal_profile';
 const WEEK_KEY = 'nomorecal_week';
+const LOG_HISTORY_KEY = 'nomorecal_log_history';
 
 export function saveProfile(data: {
   age: number;
@@ -58,6 +66,7 @@ export function getProfile(): UserProfile | null {
 export function clearProfile(): void {
   localStorage.removeItem(PROFILE_KEY);
   localStorage.removeItem(WEEK_KEY);
+  localStorage.removeItem(LOG_HISTORY_KEY);
 }
 
 export function getCurrentWeekData(): WeekData {
@@ -69,15 +78,20 @@ export function getCurrentWeekData(): WeekData {
     if (data.weekStart === weekStart) return data;
   }
 
-  // New week
   const newWeek: WeekData = { weekStart, logs: [] };
   localStorage.setItem(WEEK_KEY, JSON.stringify(newWeek));
   return newWeek;
 }
 
+function getDateForDayIndex(dayIndex: number): string {
+  const weekStart = getWeekStartDate();
+  const date = new Date(weekStart);
+  date.setDate(date.getDate() + dayIndex);
+  return date.toISOString().split('T')[0];
+}
+
 export function saveDayLog(log: DayLog): WeekData {
   const week = getCurrentWeekData();
-  // Replace if exists, add if not
   const existing = week.logs.findIndex(l => l.dayIndex === log.dayIndex);
   if (existing >= 0) {
     week.logs[existing] = log;
@@ -85,7 +99,33 @@ export function saveDayLog(log: DayLog): WeekData {
     week.logs.push(log);
   }
   localStorage.setItem(WEEK_KEY, JSON.stringify(week));
+
+  // Also save to flat log history for monthly view
+  const dateKey = getDateForDayIndex(log.dayIndex);
+  saveLogEntry({
+    dateKey,
+    onTarget: log.onTarget,
+    indulgenceDescription: log.indulgenceDescription,
+  });
+
   return week;
+}
+
+function saveLogEntry(entry: DayLogEntry): void {
+  const history = getAllLogs();
+  const idx = history.findIndex(e => e.dateKey === entry.dateKey);
+  if (idx >= 0) {
+    history[idx] = entry;
+  } else {
+    history.push(entry);
+  }
+  localStorage.setItem(LOG_HISTORY_KEY, JSON.stringify(history));
+}
+
+export function getAllLogs(): DayLogEntry[] {
+  const raw = localStorage.getItem(LOG_HISTORY_KEY);
+  if (!raw) return [];
+  return JSON.parse(raw);
 }
 
 export function getWeeklyConsumed(week: WeekData): number {
