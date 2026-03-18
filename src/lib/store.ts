@@ -67,6 +67,8 @@ export async function saveProfileToCloud(userId: string, input: {
   weight: number;
   activityLevel: ActivityLevel;
   goal: Goal;
+  eatOutFrequency: EatOutFrequency;
+  calorieTrackingAttitude: CalorieTrackingAttitude;
 }): Promise<UserProfile> {
   const bmr = calculateBMR(input.gender, input.weight, input.height, input.age);
   const dailyTarget = calculateDailyTarget(bmr, input.activityLevel, input.goal);
@@ -82,7 +84,9 @@ export async function saveProfileToCloud(userId: string, input: {
     goal: input.goal,
     daily_target: dailyTarget,
     weekly_target: weeklyTarget,
-  }, { onConflict: 'user_id' });
+    eat_out_frequency: input.eatOutFrequency,
+    calorie_tracking_attitude: input.calorieTrackingAttitude,
+  } as any, { onConflict: 'user_id' });
 
   if (error) throw error;
 
