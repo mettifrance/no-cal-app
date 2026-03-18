@@ -45,8 +45,10 @@ export type Database = {
         Row: {
           activity_level: string
           age: number
+          calorie_tracking_attitude: string | null
           created_at: string
           daily_target: number
+          eat_out_frequency: string | null
           gender: string
           goal: string
           height: number
@@ -59,8 +61,10 @@ export type Database = {
         Insert: {
           activity_level: string
           age: number
+          calorie_tracking_attitude?: string | null
           created_at?: string
           daily_target: number
+          eat_out_frequency?: string | null
           gender: string
           goal: string
           height: number
@@ -73,8 +77,10 @@ export type Database = {
         Update: {
           activity_level?: string
           age?: number
+          calorie_tracking_attitude?: string | null
           created_at?: string
           daily_target?: number
+          eat_out_frequency?: string | null
           gender?: string
           goal?: string
           height?: number
@@ -83,6 +89,30 @@ export type Database = {
           user_id?: string
           weekly_target?: number
           weight?: number
+        }
+        Relationships: []
+      }
+      weekly_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          week_start: string
+          worth_it_indulgence: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          week_start: string
+          worth_it_indulgence: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          week_start?: string
+          worth_it_indulgence?: string
         }
         Relationships: []
       }

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ActivityLevel, Gender, Goal } from '@/lib/calories';
-import { saveProfileToCloud, UserProfile } from '@/lib/store';
+import { saveProfileToCloud, UserProfile, EatOutFrequency, CalorieTrackingAttitude } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,7 +12,7 @@ interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
 }
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'result'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'eat_out', 'goal', 'calorie_attitude', 'result'] as const;
 type Step = typeof STEPS[number];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
@@ -25,6 +25,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [weight, setWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderately_active');
   const [goal, setGoal] = useState<Goal>('awareness');
+  const [eatOutFrequency, setEatOutFrequency] = useState<EatOutFrequency>('1_2_times');
+  const [calorieTrackingAttitude, setCalorieTrackingAttitude] = useState<CalorieTrackingAttitude>('dislike_a_little');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +34,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   async function next() {
     if (stepIndex < STEPS.length - 1) {
-      if (step === 'goal') {
+      if (step === 'calorie_attitude') {
         if (!user) return;
         setSaving(true);
         try {
@@ -43,6 +45,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             weight: parseInt(weight),
             activityLevel,
             goal,
+            eatOutFrequency,
+            calorieTrackingAttitude,
           });
           setProfile(p);
         } catch (err: any) {
@@ -213,7 +217,46 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">{saving ? 'Saving...' : 'Continue'}</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                </div>
+              </div>
+            )}
+
+            {step === 'eat_out' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-2xl font-serif mb-2">Your Lifestyle</h2>
+                  <p className="text-muted-foreground">Eating out is part of life. How often does it happen for you?</p>
+                </div>
+                <div className="space-y-3">
+                  {([
+                    { value: 'rarely', label: 'Rarely', desc: 'I mostly cook at home', emoji: '🏡' },
+                    { value: '1_2_times', label: '1–2 times a week', desc: 'A meal or two out', emoji: '🍽️' },
+                    { value: '3_4_times', label: '3–4 times a week', desc: 'I eat out pretty often', emoji: '🥡' },
+                    { value: '5_plus', label: '5+ times a week', desc: 'Most meals are out or ordered', emoji: '📱' },
+                  ] as { value: EatOutFrequency; label: string; desc: string; emoji: string }[]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setEatOutFrequency(opt.value)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                        eatOutFrequency === opt.value
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{opt.emoji}</span>
+                        <div>
+                          <div className="font-semibold">{opt.label}</div>
+                          <div className="text-sm text-muted-foreground">{opt.desc}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
                 </div>
               </div>
             )}
@@ -249,6 +292,48 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </button>
                   ))}
                 </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                </div>
+              </div>
+            )}
+
+            {step === 'calorie_attitude' && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-2xl font-serif mb-2">One Last Thing</h2>
+                  <p className="text-muted-foreground">Be honest — how do you feel about counting calories?</p>
+                </div>
+                <div className="space-y-3">
+                  {([
+                    { value: 'dont_mind', label: "I don't mind it", desc: "It's fine, just tedious sometimes", emoji: '😐' },
+                    { value: 'dislike_a_little', label: 'I dislike it a little', desc: "I'd rather not, but I get the point", emoji: '😕' },
+                    { value: 'really_dislike', label: 'I really dislike it', desc: 'It makes eating feel like math', emoji: '😩' },
+                    { value: 'hate_it', label: 'I hate it', desc: "That's exactly why I'm here", emoji: '🙅' },
+                  ] as { value: CalorieTrackingAttitude; label: string; desc: string; emoji: string }[]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setCalorieTrackingAttitude(opt.value)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                        calorieTrackingAttitude === opt.value
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{opt.emoji}</span>
+                        <div>
+                          <div className="font-semibold">{opt.label}</div>
+                          <div className="text-sm text-muted-foreground">{opt.desc}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-center text-muted-foreground">
+                  No judgment — this helps us tailor your experience. No calorie counting here. 🌿
+                </p>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
                   <Button onClick={next} disabled={saving} className="flex-1 rounded-xl">{saving ? 'Saving...' : 'Continue'}</Button>

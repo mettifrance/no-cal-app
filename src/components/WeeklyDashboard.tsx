@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { UserProfile, WeekData, fetchWeekLogs, saveDayLogToCloud } from '@/lib/store';
+import { UserProfile, WeekData, fetchWeekLogs, saveDayLogToCloud, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
 import { getCurrentDayIndex, getDayName } from '@/lib/calories';
 import { useAuth } from '@/contexts/AuthContext';
 import DayCheckIn from './DayCheckIn';
 import MonthlyRhythm from './MonthlyRhythm';
 import WeeklyBalanceCard from './WeeklyBalanceCard';
 import WeekBadge from './WeekBadge';
+import WeeklyReflection from './WeeklyReflection';
 
 interface WeeklyDashboardProps {
   profile: UserProfile;
@@ -19,6 +20,8 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const [checkInDay, setCheckInDay] = useState<number | null>(null);
   const [view, setView] = useState<'week' | 'month'>('week');
   const [loading, setLoading] = useState(true);
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflectionWeekStart, setReflectionWeekStart] = useState<string | null>(null);
 
   const loadWeekData = useCallback(async () => {
     if (!user) return;
@@ -35,6 +38,18 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   useEffect(() => {
     loadWeekData();
   }, [loadWeekData]);
+
+  // Check if we should show weekly reflection for previous week
+  useEffect(() => {
+    if (!user) return;
+    const { weekStartStr } = getPreviousWeekStart();
+    fetchWeeklyReflection(user.id, weekStartStr).then((existing) => {
+      if (!existing) {
+        setReflectionWeekStart(weekStartStr);
+        setShowReflection(true);
+      }
+    });
+  }, [user]);
 
   const currentDayIndex = getCurrentDayIndex();
   const checkedDays = new Set(weekData.logs.map(l => l.dayIndex));
@@ -135,6 +150,14 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
               </div>
             ))}
           </motion.div>
+        )}
+
+        {showReflection && reflectionWeekStart && (
+          <WeeklyReflection
+            weekStart={reflectionWeekStart}
+            onComplete={() => setShowReflection(false)}
+            onSkip={() => setShowReflection(false)}
+          />
         )}
 
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="bg-card rounded-2xl p-5 border border-dashed border-primary/30 text-center space-y-2">

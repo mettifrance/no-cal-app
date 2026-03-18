@@ -1,6 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Gender, ActivityLevel, Goal, calculateBMR, calculateDailyTarget, calculateWeeklyTarget, getWeekStartDate, getCurrentDayIndex } from './calories';
 
+export type EatOutFrequency = 'rarely' | '1_2_times' | '3_4_times' | '5_plus';
+export type CalorieTrackingAttitude = 'dont_mind' | 'dislike_a_little' | 'really_dislike' | 'hate_it';
+
 export interface UserProfile {
   age: number;
   gender: Gender;
@@ -10,6 +13,8 @@ export interface UserProfile {
   goal: Goal;
   dailyTarget: number;
   weeklyTarget: number;
+  eatOutFrequency: EatOutFrequency;
+  calorieTrackingAttitude: CalorieTrackingAttitude;
 }
 
 export interface DayLog {
@@ -50,6 +55,8 @@ export async function fetchProfile(userId: string): Promise<UserProfile | null> 
     goal: data.goal as Goal,
     dailyTarget: data.daily_target,
     weeklyTarget: data.weekly_target,
+    eatOutFrequency: (data as any).eat_out_frequency as EatOutFrequency || 'rarely',
+    calorieTrackingAttitude: (data as any).calorie_tracking_attitude as CalorieTrackingAttitude || 'dislike_a_little',
   };
 }
 
@@ -60,6 +67,8 @@ export async function saveProfileToCloud(userId: string, input: {
   weight: number;
   activityLevel: ActivityLevel;
   goal: Goal;
+  eatOutFrequency: EatOutFrequency;
+  calorieTrackingAttitude: CalorieTrackingAttitude;
 }): Promise<UserProfile> {
   const bmr = calculateBMR(input.gender, input.weight, input.height, input.age);
   const dailyTarget = calculateDailyTarget(bmr, input.activityLevel, input.goal);
@@ -75,7 +84,9 @@ export async function saveProfileToCloud(userId: string, input: {
     goal: input.goal,
     daily_target: dailyTarget,
     weekly_target: weeklyTarget,
-  }, { onConflict: 'user_id' });
+    eat_out_frequency: input.eatOutFrequency,
+    calorie_tracking_attitude: input.calorieTrackingAttitude,
+  } as any, { onConflict: 'user_id' });
 
   if (error) throw error;
 
@@ -155,4 +166,55 @@ export async function fetchAllLogs(userId: string): Promise<DayLogEntry[]> {
     onTarget: row.on_target,
     indulgenceDescription: row.indulgence_description || undefined,
   }));
+}
+
+// ---- Weekly Reflections ----
+
+export const WORTH_IT_OPTIONS = [
+  { value: 'dinner_out', label: 'Dinner out', emoji: '🍽️' },
+  { value: 'dessert', label: 'Dessert', emoji: '🍰' },
+  { value: 'drinks', label: 'Drinks', emoji: '🍷' },
+  { value: 'social_event', label: 'Social event', emoji: '🎉' },
+  { value: 'random_craving', label: 'Random craving', emoji: '🍫' },
+  { value: 'none', label: "I didn't have one", emoji: '🌿' },
+  { value: 'other', label: 'Other', emoji: '✨' },
+] as const;
+
+export async function fetchWeeklyReflection(userId: string, weekStart: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('weekly_reflections' as any)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_start', weekStart)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return (data as any).worth_it_indulgence;
+}
+
+export async function saveWeeklyReflection(userId: string, weekStart: string, worthItIndulgence: string): Promise<void> {
+  const { error } = await supabase.from('weekly_reflections' as any).upsert({
+    user_id: userId,
+    week_start: weekStart,
+    worth_it_indulgence: worthItIndulgence,
+  } as any, { onConflict: 'user_id,week_start' });
+
+  if (error) throw error;
+}
+
+export function getPreviousWeekStart(): { weekStartStr: string; isComplete: boolean } {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - diff);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  const prevMonday = new Date(thisMonday);
+  prevMonday.setDate(prevMonday.getDate() - 7);
+
+  return {
+    weekStartStr: formatLocalDate(prevMonday),
+    isComplete: true, // previous week is always complete
+  };
 }
