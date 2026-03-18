@@ -82,11 +82,18 @@ export async function saveProfileToCloud(userId: string, input: {
   return { ...input, dailyTarget, weeklyTarget };
 }
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getDateForDayIndex(dayIndex: number): string {
   const weekStart = getWeekStartDate();
   const date = new Date(weekStart);
   date.setDate(date.getDate() + dayIndex);
-  return date.toISOString().split('T')[0];
+  return formatLocalDate(date);
 }
 
 export async function saveDayLogToCloud(userId: string, log: DayLog): Promise<void> {
@@ -104,10 +111,10 @@ export async function saveDayLogToCloud(userId: string, log: DayLog): Promise<vo
 
 export async function fetchWeekLogs(userId: string): Promise<WeekData> {
   const weekStart = getWeekStartDate();
-  const weekStartStr = weekStart.toISOString().split('T')[0];
+  const weekStartStr = formatLocalDate(weekStart);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
-  const weekEndStr = weekEnd.toISOString().split('T')[0];
+  const weekEndStr = formatLocalDate(weekEnd);
 
   const { data, error } = await supabase
     .from('daily_logs')
@@ -119,7 +126,8 @@ export async function fetchWeekLogs(userId: string): Promise<WeekData> {
   if (error) throw error;
 
   const logs: DayLog[] = (data || []).map((row) => {
-    const date = new Date(row.date + 'T00:00:00');
+    const [year, month, day] = row.date.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     const dayOfWeek = date.getDay();
     const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     return {
