@@ -1,6 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Gender, ActivityLevel, Goal, calculateBMR, calculateDailyTarget, calculateWeeklyTarget, getWeekStartDate, getCurrentDayIndex } from './calories';
 
+export type EatOutFrequency = 'rarely' | '1_2_times' | '3_4_times' | '5_plus';
+export type CalorieTrackingAttitude = 'dont_mind' | 'dislike_a_little' | 'really_dislike' | 'hate_it';
+
 export interface UserProfile {
   age: number;
   gender: Gender;
@@ -10,6 +13,8 @@ export interface UserProfile {
   goal: Goal;
   dailyTarget: number;
   weeklyTarget: number;
+  eatOutFrequency: EatOutFrequency;
+  calorieTrackingAttitude: CalorieTrackingAttitude;
 }
 
 export interface DayLog {
