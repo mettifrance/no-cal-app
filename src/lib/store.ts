@@ -111,10 +111,10 @@ export async function saveDayLogToCloud(userId: string, log: DayLog): Promise<vo
 
 export async function fetchWeekLogs(userId: string): Promise<WeekData> {
   const weekStart = getWeekStartDate();
-  const weekStartStr = weekStart.toISOString().split('T')[0];
+  const weekStartStr = formatLocalDate(weekStart);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
-  const weekEndStr = weekEnd.toISOString().split('T')[0];
+  const weekEndStr = formatLocalDate(weekEnd);
 
   const { data, error } = await supabase
     .from('daily_logs')
