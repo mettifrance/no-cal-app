@@ -82,11 +82,18 @@ export async function saveProfileToCloud(userId: string, input: {
   return { ...input, dailyTarget, weeklyTarget };
 }
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getDateForDayIndex(dayIndex: number): string {
   const weekStart = getWeekStartDate();
   const date = new Date(weekStart);
   date.setDate(date.getDate() + dayIndex);
-  return date.toISOString().split('T')[0];
+  return formatLocalDate(date);
 }
 
 export async function saveDayLogToCloud(userId: string, log: DayLog): Promise<void> {
