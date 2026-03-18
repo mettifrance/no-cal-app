@@ -126,7 +126,8 @@ export async function fetchWeekLogs(userId: string): Promise<WeekData> {
   if (error) throw error;
 
   const logs: DayLog[] = (data || []).map((row) => {
-    const date = new Date(row.date + 'T00:00:00');
+    const [year, month, day] = row.date.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     const dayOfWeek = date.getDay();
     const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     return {
