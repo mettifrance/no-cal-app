@@ -167,3 +167,54 @@ export async function fetchAllLogs(userId: string): Promise<DayLogEntry[]> {
     indulgenceDescription: row.indulgence_description || undefined,
   }));
 }
+
+// ---- Weekly Reflections ----
+
+export const WORTH_IT_OPTIONS = [
+  { value: 'dinner_out', label: 'Dinner out', emoji: '🍽️' },
+  { value: 'dessert', label: 'Dessert', emoji: '🍰' },
+  { value: 'drinks', label: 'Drinks', emoji: '🍷' },
+  { value: 'social_event', label: 'Social event', emoji: '🎉' },
+  { value: 'random_craving', label: 'Random craving', emoji: '🍫' },
+  { value: 'none', label: "I didn't have one", emoji: '🌿' },
+  { value: 'other', label: 'Other', emoji: '✨' },
+] as const;
+
+export async function fetchWeeklyReflection(userId: string, weekStart: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('weekly_reflections' as any)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_start', weekStart)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return (data as any).worth_it_indulgence;
+}
+
+export async function saveWeeklyReflection(userId: string, weekStart: string, worthItIndulgence: string): Promise<void> {
+  const { error } = await supabase.from('weekly_reflections' as any).upsert({
+    user_id: userId,
+    week_start: weekStart,
+    worth_it_indulgence: worthItIndulgence,
+  } as any, { onConflict: 'user_id,week_start' });
+
+  if (error) throw error;
+}
+
+export function getPreviousWeekStart(): { weekStartStr: string; isComplete: boolean } {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - diff);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  const prevMonday = new Date(thisMonday);
+  prevMonday.setDate(prevMonday.getDate() - 7);
+
+  return {
+    weekStartStr: formatLocalDate(prevMonday),
+    isComplete: true, // previous week is always complete
+  };
+}
