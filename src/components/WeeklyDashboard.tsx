@@ -152,6 +152,14 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           </motion.div>
         )}
 
+        {showReflection && reflectionWeekStart && (
+          <WeeklyReflection
+            weekStart={reflectionWeekStart}
+            onComplete={() => setShowReflection(false)}
+            onSkip={() => setShowReflection(false)}
+          />
+        )}
+
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="bg-card rounded-2xl p-5 border border-dashed border-primary/30 text-center space-y-2">
           <div className="text-2xl">✨</div>
           <p className="text-sm text-muted-foreground">
