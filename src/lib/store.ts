@@ -55,6 +55,8 @@ export async function fetchProfile(userId: string): Promise<UserProfile | null> 
     goal: data.goal as Goal,
     dailyTarget: data.daily_target,
     weeklyTarget: data.weekly_target,
+    eatOutFrequency: (data as any).eat_out_frequency as EatOutFrequency || 'rarely',
+    calorieTrackingAttitude: (data as any).calorie_tracking_attitude as CalorieTrackingAttitude || 'dislike_a_little',
   };
 }
 
