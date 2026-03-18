@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { UserProfile, WeekData, fetchWeekLogs, saveDayLogToCloud } from '@/lib/store';
+import { UserProfile, WeekData, fetchWeekLogs, saveDayLogToCloud, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
 import { getCurrentDayIndex, getDayName } from '@/lib/calories';
 import { useAuth } from '@/contexts/AuthContext';
 import DayCheckIn from './DayCheckIn';
 import MonthlyRhythm from './MonthlyRhythm';
 import WeeklyBalanceCard from './WeeklyBalanceCard';
 import WeekBadge from './WeekBadge';
+import WeeklyReflection from './WeeklyReflection';
 
 interface WeeklyDashboardProps {
   profile: UserProfile;
