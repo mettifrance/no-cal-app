@@ -20,6 +20,8 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const [checkInDay, setCheckInDay] = useState<number | null>(null);
   const [view, setView] = useState<'week' | 'month'>('week');
   const [loading, setLoading] = useState(true);
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflectionWeekStart, setReflectionWeekStart] = useState<string | null>(null);
 
   const loadWeekData = useCallback(async () => {
     if (!user) return;
