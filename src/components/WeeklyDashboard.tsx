@@ -39,6 +39,18 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
     loadWeekData();
   }, [loadWeekData]);
 
+  // Check if we should show weekly reflection for previous week
+  useEffect(() => {
+    if (!user) return;
+    const { weekStartStr } = getPreviousWeekStart();
+    fetchWeeklyReflection(user.id, weekStartStr).then((existing) => {
+      if (!existing) {
+        setReflectionWeekStart(weekStartStr);
+        setShowReflection(true);
+      }
+    });
+  }, [user]);
+
   const currentDayIndex = getCurrentDayIndex();
   const checkedDays = new Set(weekData.logs.map(l => l.dayIndex));
   const indulgentDays = weekData.logs.filter(l => !l.onTarget).length;
