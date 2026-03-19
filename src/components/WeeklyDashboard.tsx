@@ -9,6 +9,16 @@ import MonthlyRhythm from './MonthlyRhythm';
 import WeeklyBalanceCard from './WeeklyBalanceCard';
 import WeekBadge from './WeekBadge';
 import WeeklyReflection from './WeeklyReflection';
+import InstallPrompt from './InstallPrompt';
+import NotificationPrompt from './NotificationPrompt';
+import EveningBanner from './EveningBanner';
+import {
+  shouldShowInstallPrompt,
+  shouldShowNotificationPrompt,
+  checkAndMarkStandaloneOnOpen,
+  isIOS,
+  isStandalone,
+} from '@/lib/promptState';
 
 interface WeeklyDashboardProps {
   profile: UserProfile;
@@ -22,6 +32,9 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [showReflection, setShowReflection] = useState(false);
   const [reflectionWeekStart, setReflectionWeekStart] = useState<string | null>(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [showEveningBanner, setShowEveningBanner] = useState(false);
 
   const loadWeekData = useCallback(async () => {
     if (!user) return;
@@ -39,6 +52,11 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
     loadWeekData();
   }, [loadWeekData]);
 
+  // Mark standalone on open
+  useEffect(() => {
+    checkAndMarkStandaloneOnOpen();
+  }, []);
+
   // Check if we should show weekly reflection for previous week
   useEffect(() => {
     if (!user) return;
@@ -53,8 +71,40 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
 
   const currentDayIndex = getCurrentDayIndex();
   const checkedDays = new Set(weekData.logs.map(l => l.dayIndex));
+  const totalCheckIns = weekData.logs.length;
   const indulgentDays = weekData.logs.filter(l => !l.onTarget).length;
   const alignedDays = weekData.logs.filter(l => l.onTarget).length;
+  const loggedToday = checkedDays.has(currentDayIndex);
+
+  // Show prompts after data loads (with priority: install > notification)
+  useEffect(() => {
+    if (loading) return;
+
+    // On iOS in browser → show install prompt first, skip notification
+    if (isIOS() && !isStandalone()) {
+      if (shouldShowInstallPrompt(totalCheckIns)) {
+        setShowInstallPrompt(true);
+      }
+      return;
+    }
+
+    // Otherwise check notification prompt
+    if (shouldShowNotificationPrompt(totalCheckIns)) {
+      setShowNotificationPrompt(true);
+    }
+  }, [loading, totalCheckIns]);
+
+  // Evening banner: show after 18:00 if not logged today & notifications not enabled
+  useEffect(() => {
+    if (loading || loggedToday) return;
+    const hour = new Date().getHours();
+    if (hour >= 18) {
+      const notifPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+      if (notifPerm !== 'granted') {
+        setShowEveningBanner(true);
+      }
+    }
+  }, [loading, loggedToday]);
 
   const nextUncheckedDay = useMemo(() => {
     for (let i = 0; i <= currentDayIndex; i++) {
@@ -132,6 +182,12 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           </motion.div>
         )}
 
+        <AnimatePresence>
+          {showEveningBanner && !loggedToday && (
+            <EveningBanner onDismiss={() => setShowEveningBanner(false)} />
+          )}
+        </AnimatePresence>
+
         {weekData.logs.length > 0 && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="space-y-3">
             <h3 className="text-lg font-serif">Log</h3>
@@ -177,6 +233,18 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
             onComplete={handleCheckInComplete}
             onClose={() => setCheckInDay(null)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInstallPrompt && (
+          <InstallPrompt onDismiss={() => setShowInstallPrompt(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showNotificationPrompt && (
+          <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
         )}
       </AnimatePresence>
     </div>
