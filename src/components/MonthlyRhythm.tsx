@@ -17,6 +17,47 @@ function getFirstDayOfWeek(year: number, month: number) {
   return day === 0 ? 6 : day - 1;
 }
 
+function deriveInsights(logs: DayLogEntry[], year: number, month: number): string[] {
+  const monthLogs = logs.filter((l) => {
+    const [y, m] = l.dateKey.split('-').map(Number);
+    return y === year && m === month + 1;
+  });
+  if (monthLogs.length < 5) return [];
+
+  const insights: string[] = [];
+  let weekdayIndulgent = 0;
+  let weekendIndulgent = 0;
+  let weekdayTotal = 0;
+  let weekendTotal = 0;
+
+  for (const log of monthLogs) {
+    const [y, m, d] = log.dateKey.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    if (isWeekend) {
+      weekendTotal++;
+      if (!log.onTarget) weekendIndulgent++;
+    } else {
+      weekdayTotal++;
+      if (!log.onTarget) weekdayIndulgent++;
+    }
+  }
+
+  if (weekendTotal >= 2 && weekendIndulgent / weekendTotal > 0.5 && weekendIndulgent > weekdayIndulgent) {
+    insights.push('Most indulgences happen on weekends.');
+  }
+  if (weekdayTotal >= 3 && weekdayIndulgent / weekdayTotal < 0.2) {
+    insights.push("You're more consistent during weekdays.");
+  }
+
+  const alignedCount = monthLogs.filter((l) => l.onTarget).length;
+  if (alignedCount / monthLogs.length >= 0.7) {
+    insights.push('Strong alignment this month — keep it up!');
+  }
+
+  return insights.slice(0, 2);
+}
+
 export default function MonthlyRhythm({ onBack }: MonthlyRhythmProps) {
   const { user } = useAuth();
   const now = new Date();
@@ -42,6 +83,8 @@ export default function MonthlyRhythm({ onBack }: MonthlyRhythmProps) {
     return map;
   }, [logs]);
 
+  const insights = useMemo(() => deriveInsights(logs, year, month), [logs, year, month]);
+
   function getDateKey(day: number) {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
@@ -53,7 +96,7 @@ export default function MonthlyRhythm({ onBack }: MonthlyRhythmProps) {
       <div className="max-w-md mx-auto space-y-6">
         <div className="flex items-center justify-between pt-4">
           <div>
-            <h1 className="text-2xl font-serif">Monthly Rhythm</h1>
+            <h1 className="text-2xl font-serif">Your Pattern This Month</h1>
             <p className="text-sm text-muted-foreground">{monthName}</p>
           </div>
           <Button variant="outline" size="sm" onClick={onBack} className="rounded-xl">← Back</Button>
@@ -92,6 +135,16 @@ export default function MonthlyRhythm({ onBack }: MonthlyRhythmProps) {
           <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-accent" />Indulgent</div>
           <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-muted" />No data</div>
         </div>
+
+        {/* Insights */}
+        {insights.length > 0 && (
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Insights</p>
+            {insights.map((ins, i) => (
+              <p key={i} className="text-sm text-foreground">💡 {ins}</p>
+            ))}
+          </motion.div>
+        )}
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">Scan for patterns. The goal is awareness, not perfection.</p>
