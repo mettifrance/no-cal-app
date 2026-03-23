@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { UserProfile, WeekData, fetchWeekLogs, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
+import { fetchLocalWeekLogs, getLocalCheckInCount, shouldShowLoginPrompt } from '@/lib/localStore';
 import { getCurrentDayIndex, getDayName } from '@/lib/calories';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ import WeeklyReflection from './WeeklyReflection';
 import InstallPrompt from './InstallPrompt';
 import NotificationPrompt from './NotificationPrompt';
 import EveningBanner from './EveningBanner';
+import SoftLoginPrompt from './SoftLoginPrompt';
 import {
   shouldShowInstallPrompt,
   shouldShowNotificationPrompt,
@@ -40,12 +42,17 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showEveningBanner, setShowEveningBanner] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const loadWeekData = useCallback(async () => {
-    if (!user) return;
     try {
-      const data = await fetchWeekLogs(user.id);
-      setWeekData(data);
+      if (user) {
+        const data = await fetchWeekLogs(user.id);
+        setWeekData(data);
+      } else {
+        const data = fetchLocalWeekLogs();
+        setWeekData(data);
+      }
     } catch (err) {
       console.error('Failed to load week data', err);
     } finally {
@@ -56,6 +63,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   useEffect(() => { loadWeekData(); }, [loadWeekData]);
   useEffect(() => { checkAndMarkStandaloneOnOpen(); }, []);
 
+  // Weekly reflection (only for authenticated users)
   useEffect(() => {
     if (!user) return;
     const { weekStartStr } = getPreviousWeekStart();
@@ -74,14 +82,24 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const alignedDays = weekData.logs.filter(l => l.onTarget).length;
   const loggedToday = checkedDays.has(currentDayIndex);
 
+  // Install/notification prompts (only for authenticated users)
   useEffect(() => {
-    if (loading) return;
+    if (loading || !user) return;
     if (isIOS() && !isStandalone()) {
       if (shouldShowInstallPrompt(totalCheckIns)) setShowInstallPrompt(true);
       return;
     }
     if (shouldShowNotificationPrompt(totalCheckIns)) setShowNotificationPrompt(true);
-  }, [loading, totalCheckIns]);
+  }, [loading, totalCheckIns, user]);
+
+  // Soft login prompt (only for anonymous users)
+  useEffect(() => {
+    if (loading || user) return;
+    const localCount = getLocalCheckInCount();
+    if (shouldShowLoginPrompt(localCount)) {
+      setShowLoginPrompt(true);
+    }
+  }, [loading, user, weekData]);
 
   useEffect(() => {
     if (loading || loggedToday) return;
@@ -102,8 +120,15 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   async function handleCheckInComplete() {
     await loadWeekData();
     setCheckInDay(null);
-    // Show micro-reward
     toast({ description: getRandomRewardMessage() });
+
+    // After check-in, maybe show login prompt for anonymous users
+    if (!user) {
+      const localCount = getLocalCheckInCount();
+      if (shouldShowLoginPrompt(localCount)) {
+        setTimeout(() => setShowLoginPrompt(true), 1500);
+      }
+    }
   }
 
   if (view === 'month') {
@@ -129,7 +154,11 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setView('month')} className="text-xs text-muted-foreground underline">Monthly</button>
-            <button onClick={signOut} className="text-xs text-muted-foreground underline">Sign Out</button>
+            {user ? (
+              <button onClick={signOut} className="text-xs text-muted-foreground underline">Sign Out</button>
+            ) : (
+              <button onClick={() => setShowLoginPrompt(true)} className="text-xs text-primary underline font-medium">Save progress</button>
+            )}
           </div>
         </div>
 
@@ -231,6 +260,11 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
       </AnimatePresence>
       <AnimatePresence>
         {showNotificationPrompt && <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showLoginPrompt && !user && (
+          <SoftLoginPrompt onDismiss={() => setShowLoginPrompt(false)} checkInCount={getLocalCheckInCount()} />
+        )}
       </AnimatePresence>
     </div>
   );
