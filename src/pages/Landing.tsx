@@ -97,9 +97,9 @@ export default function Landing() {
           <Button
             size="lg"
             className="w-full text-lg py-6 rounded-2xl"
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/onboarding')}
           >
-            Start in 10 seconds
+            Start your first check-in
           </Button>
           <button
             onClick={() => navigate('/login')}
