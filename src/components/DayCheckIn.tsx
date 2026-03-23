@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getDayName } from '@/lib/calories';
 import { saveDayLogToCloud } from '@/lib/store';
+import { saveLocalDayLog } from '@/lib/localStore';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DayCheckInProps {
@@ -22,26 +23,31 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
   const [saving, setSaving] = useState(false);
 
   async function handleOnTarget() {
-    if (!user) return;
     setSaving(true);
-    await saveDayLogToCloud(user.id, {
-      dayIndex,
-      onTarget: true,
-      estimatedConsumption: dailyTarget,
-    });
+    const log = { dayIndex, onTarget: true, estimatedConsumption: dailyTarget };
+    if (user) {
+      await saveDayLogToCloud(user.id, log);
+    } else {
+      saveLocalDayLog(log);
+    }
     setSaving(false);
     onComplete();
   }
 
   async function handleIndulgenceSubmit() {
-    if (!indulgenceText.trim() || !user) return;
+    if (!indulgenceText.trim()) return;
     setSaving(true);
-    await saveDayLogToCloud(user.id, {
+    const log = {
       dayIndex,
       onTarget: false,
       indulgenceDescription: indulgenceText,
       estimatedConsumption: dailyTarget,
-    });
+    };
+    if (user) {
+      await saveDayLogToCloud(user.id, log);
+    } else {
+      saveLocalDayLog(log);
+    }
     setSaving(false);
     setStep('result');
   }

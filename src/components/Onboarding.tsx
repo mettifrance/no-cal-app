@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ActivityLevel, Gender, Goal } from '@/lib/calories';
+import { ActivityLevel, Gender, Goal, calculateBMR, calculateDailyTarget, calculateWeeklyTarget } from '@/lib/calories';
 import { saveProfileToCloud, UserProfile, EatOutFrequency, CalorieTrackingAttitude } from '@/lib/store';
+import { saveLocalProfile } from '@/lib/localStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,10 +36,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   async function next() {
     if (stepIndex < STEPS.length - 1) {
       if (step === 'calorie_attitude') {
-        if (!user) return;
         setSaving(true);
         try {
-          const p = await saveProfileToCloud(user.id, {
+          const input = {
             age: parseInt(age),
             gender,
             height: parseInt(height),
@@ -47,8 +47,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             goal,
             eatOutFrequency,
             calorieTrackingAttitude,
-          });
-          setProfile(p);
+          };
+
+          if (user) {
+            // Authenticated: save to cloud
+            const p = await saveProfileToCloud(user.id, input);
+            setProfile(p);
+          } else {
+            // Anonymous: save locally
+            const bmr = calculateBMR(gender, parseInt(weight), parseInt(height), parseInt(age));
+            const dailyTarget = calculateDailyTarget(bmr, activityLevel, goal);
+            const weeklyTarget = calculateWeeklyTarget(dailyTarget);
+            const p: UserProfile = { ...input, dailyTarget, weeklyTarget };
+            saveLocalProfile(p);
+            setProfile(p);
+          }
         } catch (err: any) {
           toast({ title: 'Error saving profile', description: err.message, variant: 'destructive' });
           setSaving(false);
