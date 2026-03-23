@@ -1,13 +1,17 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { UserProfile, WeekData, fetchWeekLogs, saveDayLogToCloud, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
+import { UserProfile, WeekData, fetchWeekLogs, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
 import { getCurrentDayIndex, getDayName } from '@/lib/calories';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getRandomRewardMessage } from './CheckInReward';
 import DayCheckIn from './DayCheckIn';
 import MonthlyRhythm from './MonthlyRhythm';
 import WeeklyBalanceCard from './WeeklyBalanceCard';
 import WeekBadge from './WeekBadge';
+import WeeklyStatusMessage from './WeeklyStatusMessage';
+import ReturnTrigger from './ReturnTrigger';
 import WeeklyReflection from './WeeklyReflection';
 import InstallPrompt from './InstallPrompt';
 import NotificationPrompt from './NotificationPrompt';
@@ -26,6 +30,7 @@ interface WeeklyDashboardProps {
 
 export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [weekData, setWeekData] = useState<WeekData>({ weekStart: '', logs: [] });
   const [checkInDay, setCheckInDay] = useState<number | null>(null);
   const [view, setView] = useState<'week' | 'month'>('week');
@@ -48,16 +53,9 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
     }
   }, [user]);
 
-  useEffect(() => {
-    loadWeekData();
-  }, [loadWeekData]);
+  useEffect(() => { loadWeekData(); }, [loadWeekData]);
+  useEffect(() => { checkAndMarkStandaloneOnOpen(); }, []);
 
-  // Mark standalone on open
-  useEffect(() => {
-    checkAndMarkStandaloneOnOpen();
-  }, []);
-
-  // Check if we should show weekly reflection for previous week
   useEffect(() => {
     if (!user) return;
     const { weekStartStr } = getPreviousWeekStart();
@@ -76,33 +74,21 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const alignedDays = weekData.logs.filter(l => l.onTarget).length;
   const loggedToday = checkedDays.has(currentDayIndex);
 
-  // Show prompts after data loads (with priority: install > notification)
   useEffect(() => {
     if (loading) return;
-
-    // On iOS in browser → show install prompt first, skip notification
     if (isIOS() && !isStandalone()) {
-      if (shouldShowInstallPrompt(totalCheckIns)) {
-        setShowInstallPrompt(true);
-      }
+      if (shouldShowInstallPrompt(totalCheckIns)) setShowInstallPrompt(true);
       return;
     }
-
-    // Otherwise check notification prompt
-    if (shouldShowNotificationPrompt(totalCheckIns)) {
-      setShowNotificationPrompt(true);
-    }
+    if (shouldShowNotificationPrompt(totalCheckIns)) setShowNotificationPrompt(true);
   }, [loading, totalCheckIns]);
 
-  // Evening banner: show after 18:00 if not logged today & notifications not enabled
   useEffect(() => {
     if (loading || loggedToday) return;
     const hour = new Date().getHours();
     if (hour >= 18) {
       const notifPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-      if (notifPerm !== 'granted') {
-        setShowEveningBanner(true);
-      }
+      if (notifPerm !== 'granted') setShowEveningBanner(true);
     }
   }, [loading, loggedToday]);
 
@@ -116,6 +102,8 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   async function handleCheckInComplete() {
     await loadWeekData();
     setCheckInDay(null);
+    // Show micro-reward
+    toast({ description: getRandomRewardMessage() });
   }
 
   if (view === 'month') {
@@ -133,24 +121,26 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   return (
     <div className="min-h-screen p-4 pb-24">
       <div className="max-w-md mx-auto space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between pt-4">
           <div>
             <h1 className="text-2xl font-serif">No More Cal</h1>
             <p className="text-sm text-muted-foreground">Weekly awareness</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setView('month')} className="text-xs text-muted-foreground underline">
-              Monthly
-            </button>
-            <button onClick={signOut} className="text-xs text-muted-foreground underline">
-              Sign Out
-            </button>
+            <button onClick={() => setView('month')} className="text-xs text-muted-foreground underline">Monthly</button>
+            <button onClick={signOut} className="text-xs text-muted-foreground underline">Sign Out</button>
           </div>
         </div>
 
+        {/* Dynamic status message */}
+        <WeeklyStatusMessage alignedDays={alignedDays} indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
+
+        {/* Balance card with progress text */}
         <WeeklyBalanceCard alignedDays={alignedDays} indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
         <WeekBadge indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
 
+        {/* Week grid */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="space-y-3">
           <h3 className="text-lg font-serif">This Week</h3>
           <div className="grid grid-cols-7 gap-2">
@@ -174,6 +164,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           </div>
         </motion.div>
 
+        {/* CTA */}
         {nextUncheckedDay !== null && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
             <Button size="lg" className="w-full rounded-2xl py-6 text-lg" onClick={() => setCheckInDay(nextUncheckedDay)}>
@@ -182,12 +173,16 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           </motion.div>
         )}
 
+        {/* Return trigger — show when user has logged today */}
+        {loggedToday && nextUncheckedDay === null && <ReturnTrigger />}
+
         <AnimatePresence>
           {showEveningBanner && !loggedToday && (
             <EveningBanner onDismiss={() => setShowEveningBanner(false)} />
           )}
         </AnimatePresence>
 
+        {/* Log */}
         {weekData.logs.length > 0 && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="space-y-3">
             <h3 className="text-lg font-serif">Log</h3>
@@ -216,6 +211,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
           />
         )}
 
+        {/* Pro teaser */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="bg-card rounded-2xl p-5 border border-dashed border-primary/30 text-center space-y-2">
           <div className="text-2xl">✨</div>
           <p className="text-sm text-muted-foreground">
@@ -227,25 +223,14 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
 
       <AnimatePresence>
         {checkInDay !== null && (
-          <DayCheckIn
-            dayIndex={checkInDay}
-            dailyTarget={profile.dailyTarget}
-            onComplete={handleCheckInComplete}
-            onClose={() => setCheckInDay(null)}
-          />
+          <DayCheckIn dayIndex={checkInDay} dailyTarget={profile.dailyTarget} onComplete={handleCheckInComplete} onClose={() => setCheckInDay(null)} />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
-        {showInstallPrompt && (
-          <InstallPrompt onDismiss={() => setShowInstallPrompt(false)} />
-        )}
+        {showInstallPrompt && <InstallPrompt onDismiss={() => setShowInstallPrompt(false)} />}
       </AnimatePresence>
-
       <AnimatePresence>
-        {showNotificationPrompt && (
-          <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
-        )}
+        {showNotificationPrompt && <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />}
       </AnimatePresence>
     </div>
   );

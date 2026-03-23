@@ -79,6 +79,15 @@ export default function WeeklyBalanceCard({ alignedDays, indulgentDays, totalChe
           ? 'Check in to start tracking your rhythm.'
           : config.message}
       </p>
+
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-foreground">
+          {totalCheckedDays} of 7 days logged this week
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Small daily check-ins → real awareness over time
+        </p>
+      </div>
     </motion.div>
   );
 }
