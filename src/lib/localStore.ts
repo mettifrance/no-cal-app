@@ -102,7 +102,7 @@ export function getLocalCheckInCount(): number {
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function shouldShowLoginPrompt(checkInCount: number): boolean {
-  if (checkInCount < 1) return false;
+  if (checkInCount < 3) return false;
   if (sessionStorage.getItem(KEYS.loginPromptSessionShown) === 'true') return false;
   const dismissedAt = localStorage.getItem(KEYS.loginPromptDismissedAt);
   if (dismissedAt && Date.now() - Number(dismissedAt) < SEVEN_DAYS_MS) return false;

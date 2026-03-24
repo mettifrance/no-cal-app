@@ -157,7 +157,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
             {user ? (
               <button onClick={signOut} className="text-xs text-muted-foreground underline">Sign Out</button>
             ) : (
-              <button onClick={() => setShowLoginPrompt(true)} className="text-xs text-primary underline font-medium">Save progress</button>
+              <Button variant="default" size="sm" className="rounded-xl text-xs px-3 py-1 h-auto" onClick={() => setShowLoginPrompt(true)}>Save progress</Button>
             )}
           </div>
         </div>
