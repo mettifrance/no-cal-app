@@ -85,6 +85,11 @@ export default function WeeklyBalanceCard({ alignedDays, indulgentDays, totalChe
           {totalCheckedDays} of 7 days logged this week
         </p>
         <p className="text-xs text-muted-foreground">
+          {7 - totalCheckedDays > 0
+            ? `${7 - totalCheckedDays} day${7 - totalCheckedDays > 1 ? 's' : ''} left to log this week`
+            : 'All days logged — great consistency!'}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
           Small daily check-ins → real awareness over time
         </p>
       </div>

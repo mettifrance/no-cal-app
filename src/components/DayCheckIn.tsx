@@ -81,6 +81,7 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
                 🍰 I had an indulgent meal
               </Button>
             </div>
+            <p className="text-xs text-center text-muted-foreground">Select an option to continue</p>
             <button onClick={onClose} className="w-full text-center text-sm text-muted-foreground">Skip for now</button>
           </>
         )}

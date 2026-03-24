@@ -102,6 +102,23 @@ export default function MonthlyRhythm({ onBack }: MonthlyRhythmProps) {
           <Button variant="outline" size="sm" onClick={onBack} className="rounded-xl">← Back</Button>
         </div>
 
+        {/* Monthly summary */}
+        {(() => {
+          const monthLogs = logs.filter((l) => {
+            const [y, m] = l.dateKey.split('-').map(Number);
+            return y === year && m === month + 1;
+          });
+          const alignedCount = monthLogs.filter(l => l.onTarget).length;
+          if (monthLogs.length === 0) return null;
+          return (
+            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center">
+              <p className="text-base text-foreground font-medium">
+                {alignedCount} of {monthLogs.length} days aligned — {alignedCount / monthLogs.length >= 0.7 ? 'great consistency' : 'keep building your rhythm'}
+              </p>
+            </motion.div>
+          );
+        })()}
+
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-card rounded-2xl p-5 border">
           <div className="grid grid-cols-7 gap-1 mb-2">
             {weekDays.map((d) => (
