@@ -8,6 +8,7 @@ import { saveProfileToCloud, UserProfile, EatOutFrequency, CalorieTrackingAttitu
 import { saveLocalProfile } from '@/lib/localStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { t } from '@/lib/i18n';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
@@ -50,11 +51,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           };
 
           if (user) {
-            // Authenticated: save to cloud
             const p = await saveProfileToCloud(user.id, input);
             setProfile(p);
           } else {
-            // Anonymous: save locally
             const bmr = calculateBMR(gender, parseInt(weight), parseInt(height), parseInt(age));
             const dailyTarget = calculateDailyTarget(bmr, activityLevel, goal);
             const weeklyTarget = calculateWeeklyTarget(dailyTarget);
@@ -63,7 +62,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             setProfile(p);
           }
         } catch (err: any) {
-          toast({ title: 'Error saving profile', description: err.message, variant: 'destructive' });
+          toast({ title: 'Errore', description: err.message, variant: 'destructive' });
           setSaving(false);
           return;
         }
@@ -119,12 +118,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'welcome' && (
               <div className="text-center space-y-6">
                 <div className="text-6xl mb-4">🌿</div>
-                <h1 className="text-4xl font-serif">No More Cal</h1>
-                <p className="text-muted-foreground text-lg leading-relaxed">
-                  Your weekly nutrition awareness coach. Stay consistent, stay balanced — without tracking every meal.
-                </p>
+                <h1 className="text-4xl font-serif">{t.onboardingWelcome}</h1>
+                <p className="text-muted-foreground text-lg leading-relaxed">{t.onboardingWelcomeSub}</p>
                 <Button size="lg" className="w-full text-lg py-6 rounded-2xl" onClick={next}>
-                  Get Started
+                  {t.onboardingStart}
                 </Button>
               </div>
             )}
@@ -132,43 +129,34 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'basics' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">About You</h2>
-                  <p className="text-muted-foreground">Just a few basics to personalize your experience.</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingAboutYou}</h2>
+                  <p className="text-muted-foreground">{t.onboardingAboutYouSub}</p>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium mb-3 block">Gender</Label>
+                    <Label className="text-sm font-medium mb-3 block">Genere</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['male', 'female'] as Gender[]).map((g) => (
                         <button
                           key={g}
                           onClick={() => setGender(g)}
-                          className={`p-4 rounded-xl border-2 transition-all text-center capitalize ${
-                            gender === g
-                              ? 'border-primary bg-primary/10 font-semibold'
-                              : 'border-border hover:border-primary/40'
+                          className={`p-4 rounded-xl border-2 transition-all text-center ${
+                            gender === g ? 'border-primary bg-primary/10 font-semibold' : 'border-border hover:border-primary/40'
                           }`}
                         >
-                          {g === 'male' ? '👨' : '👩'} {g}
+                          {g === 'male' ? '👨 Uomo' : '👩 Donna'}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="e.g. 32"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      className="mt-1 rounded-xl h-12 text-lg"
-                    />
+                    <Label htmlFor="age">Età</Label>
+                    <Input id="age" type="number" placeholder="es. 32" value={age} onChange={(e) => setAge(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">Continue</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">{t.continue}</Button>
                 </div>
               </div>
             )}
@@ -176,22 +164,22 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'body' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">Your Body</h2>
-                  <p className="text-muted-foreground">This helps us understand your unique rhythm.</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingBody}</h2>
+                  <p className="text-muted-foreground">{t.onboardingBodySub}</p>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input id="height" type="number" placeholder="e.g. 175" value={height} onChange={(e) => setHeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
+                    <Label htmlFor="height">Altezza (cm)</Label>
+                    <Input id="height" type="number" placeholder="es. 175" value={height} onChange={(e) => setHeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
                   </div>
                   <div>
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input id="weight" type="number" placeholder="e.g. 75" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
+                    <Label htmlFor="weight">Peso (kg)</Label>
+                    <Input id="weight" type="number" placeholder="es. 75" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 rounded-xl h-12 text-lg" />
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">Continue</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} disabled={!canProceed()} className="flex-1 rounded-xl">{t.continue}</Button>
                 </div>
               </div>
             )}
@@ -199,23 +187,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'activity' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">Activity Level</h2>
-                  <p className="text-muted-foreground">How active are you on a typical week?</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingActivity}</h2>
+                  <p className="text-muted-foreground">{t.onboardingActivitySub}</p>
                 </div>
                 <div className="space-y-3">
                   {([
-                    { value: 'sedentary', label: 'Sedentary', desc: 'Desk job, little exercise', emoji: '🪑' },
-                    { value: 'lightly_active', label: 'Lightly Active', desc: 'Light exercise 1-3 days/week', emoji: '🚶' },
-                    { value: 'moderately_active', label: 'Moderately Active', desc: 'Moderate exercise 3-5 days/week', emoji: '🏃' },
-                    { value: 'very_active', label: 'Very Active', desc: 'Hard exercise 6-7 days/week', emoji: '🏋️' },
+                    { value: 'sedentary', label: 'Sedentario', desc: 'Lavoro d\'ufficio, poco esercizio', emoji: '🪑' },
+                    { value: 'lightly_active', label: 'Leggermente attivo', desc: 'Esercizio leggero 1-3 giorni/settimana', emoji: '🚶' },
+                    { value: 'moderately_active', label: 'Moderatamente attivo', desc: 'Esercizio moderato 3-5 giorni/settimana', emoji: '🏃' },
+                    { value: 'very_active', label: 'Molto attivo', desc: 'Esercizio intenso 6-7 giorni/settimana', emoji: '🏋️' },
                   ] as { value: ActivityLevel; label: string; desc: string; emoji: string }[]).map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => setActivityLevel(opt.value)}
                       className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                        activityLevel === opt.value
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/40'
+                        activityLevel === opt.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -229,8 +215,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ))}
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">{t.continue}</Button>
                 </div>
               </div>
             )}
@@ -238,23 +224,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'eat_out' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">Your Lifestyle</h2>
-                  <p className="text-muted-foreground">Eating out is part of life. How often does it happen for you?</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingLifestyle}</h2>
+                  <p className="text-muted-foreground">{t.onboardingLifestyleSub}</p>
                 </div>
                 <div className="space-y-3">
                   {([
-                    { value: 'rarely', label: 'Rarely', desc: 'I mostly cook at home', emoji: '🏡' },
-                    { value: '1_2_times', label: '1–2 times a week', desc: 'A meal or two out', emoji: '🍽️' },
-                    { value: '3_4_times', label: '3–4 times a week', desc: 'I eat out pretty often', emoji: '🥡' },
-                    { value: '5_plus', label: '5+ times a week', desc: 'Most meals are out or ordered', emoji: '📱' },
+                    { value: 'rarely', label: 'Raramente', desc: 'Cucino quasi sempre a casa', emoji: '🏡' },
+                    { value: '1_2_times', label: '1–2 volte a settimana', desc: 'Un pasto o due fuori', emoji: '🍽️' },
+                    { value: '3_4_times', label: '3–4 volte a settimana', desc: 'Mangio fuori spesso', emoji: '🥡' },
+                    { value: '5_plus', label: '5+ volte a settimana', desc: 'La maggior parte dei pasti sono fuori', emoji: '📱' },
                   ] as { value: EatOutFrequency; label: string; desc: string; emoji: string }[]).map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => setEatOutFrequency(opt.value)}
                       className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                        eatOutFrequency === opt.value
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/40'
+                        eatOutFrequency === opt.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -268,8 +252,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ))}
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">{t.continue}</Button>
                 </div>
               </div>
             )}
@@ -277,22 +261,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'goal' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">Your Goal</h2>
-                  <p className="text-muted-foreground">What would you like to achieve?</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingGoal}</h2>
+                  <p className="text-muted-foreground">{t.onboardingGoalSub}</p>
                 </div>
                 <div className="space-y-3">
                   {([
-                    { value: 'lose_weight', label: 'Lose Weight', desc: 'Build a sustainable deficit', emoji: '📉' },
-                    { value: 'maintain', label: 'Maintain Weight', desc: 'Stay balanced and consistent', emoji: '⚖️' },
-                    { value: 'awareness', label: 'Improve Awareness', desc: 'Understand your eating patterns', emoji: '🧠' },
+                    { value: 'lose_weight', label: 'Perdere peso', desc: 'Costruire un deficit sostenibile', emoji: '📉' },
+                    { value: 'maintain', label: 'Mantenere il peso', desc: 'Restare in equilibrio e costante', emoji: '⚖️' },
+                    { value: 'awareness', label: 'Migliorare la consapevolezza', desc: 'Capire i tuoi pattern alimentari', emoji: '🧠' },
                   ] as { value: Goal; label: string; desc: string; emoji: string }[]).map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => setGoal(opt.value)}
                       className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                        goal === opt.value
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/40'
+                        goal === opt.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -306,8 +288,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ))}
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} className="flex-1 rounded-xl">Continue</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} className="flex-1 rounded-xl">{t.continue}</Button>
                 </div>
               </div>
             )}
@@ -315,23 +297,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'calorie_attitude' && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-2xl font-serif mb-2">One Last Thing</h2>
-                  <p className="text-muted-foreground">Be honest — how do you feel about counting calories?</p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingAttitude}</h2>
+                  <p className="text-muted-foreground">{t.onboardingAttitudeSub}</p>
                 </div>
                 <div className="space-y-3">
                   {([
-                    { value: 'dont_mind', label: "I don't mind it", desc: "It's fine, just tedious sometimes", emoji: '😐' },
-                    { value: 'dislike_a_little', label: 'I dislike it a little', desc: "I'd rather not, but I get the point", emoji: '😕' },
-                    { value: 'really_dislike', label: 'I really dislike it', desc: 'It makes eating feel like math', emoji: '😩' },
-                    { value: 'hate_it', label: 'I hate it', desc: "That's exactly why I'm here", emoji: '🙅' },
+                    { value: 'dont_mind', label: 'Non mi dà fastidio', desc: 'Okay, solo un po\' noioso', emoji: '😐' },
+                    { value: 'dislike_a_little', label: 'Non mi piace tanto', desc: 'Preferirei evitarlo, ma capisco il senso', emoji: '😕' },
+                    { value: 'really_dislike', label: 'Lo detesto', desc: 'Mangiare non dovrebbe essere matematica', emoji: '😩' },
+                    { value: 'hate_it', label: 'Lo odio', desc: 'Ecco perché sono qui', emoji: '🙅' },
                   ] as { value: CalorieTrackingAttitude; label: string; desc: string; emoji: string }[]).map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => setCalorieTrackingAttitude(opt.value)}
                       className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                        calorieTrackingAttitude === opt.value
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/40'
+                        calorieTrackingAttitude === opt.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -344,12 +324,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-center text-muted-foreground">
-                  No judgment — this helps us tailor your experience. No calorie counting here. 🌿
-                </p>
+                <p className="text-xs text-center text-muted-foreground">{t.onboardingNoJudge}</p>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={back} className="rounded-xl">Back</Button>
-                  <Button onClick={next} disabled={saving} className="flex-1 rounded-xl">{saving ? 'Saving...' : 'Continue'}</Button>
+                  <Button variant="outline" onClick={back} className="rounded-xl">{t.back}</Button>
+                  <Button onClick={next} disabled={saving} className="flex-1 rounded-xl">{saving ? t.saving : t.continue}</Button>
                 </div>
               </div>
             )}
@@ -358,29 +336,23 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="text-5xl mb-4">✨</div>
-                  <h2 className="text-2xl font-serif mb-2">You're All Set</h2>
-                  <p className="text-muted-foreground leading-relaxed">
-                    We now understand your rhythm and your goal.
-                  </p>
+                  <h2 className="text-2xl font-serif mb-2">{t.onboardingDone}</h2>
+                  <p className="text-muted-foreground leading-relaxed">{t.onboardingDoneSub}</p>
                 </div>
                 <div className="bg-card rounded-2xl p-6 space-y-4 border">
                   <div className="text-center space-y-3">
                     <div className="text-4xl">🌿</div>
-                    <p className="text-foreground leading-relaxed">
-                      The app will help you stay consistent during the week with simple daily check-ins.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      No calorie counting. No meal logging. Just awareness.
-                    </p>
+                    <p className="text-foreground leading-relaxed">{t.onboardingDoneDetail}</p>
+                    <p className="text-sm text-muted-foreground">{t.onboardingDoneHint}</p>
                   </div>
                 </div>
                 <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20">
                   <p className="text-sm text-center leading-relaxed">
-                    💡 Small, consistent habits create lasting results. We'll help you see the bigger picture — week by week.
+                    💡 Piccole abitudini costanti creano risultati duraturi. Ti aiutiamo a vedere il quadro generale — settimana dopo settimana.
                   </p>
                 </div>
                 <Button size="lg" className="w-full text-lg py-6 rounded-2xl" onClick={() => onComplete(profile)}>
-                  Start My Week
+                  {t.onboardingDoneCTA}
                 </Button>
               </div>
             )}
