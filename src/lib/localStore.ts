@@ -41,6 +41,7 @@ interface StoredLog {
   date: string;
   onTarget: boolean;
   indulgenceDescription?: string;
+  indulgenceTags?: string[];
 }
 
 function getAllLocalLogs(): StoredLog[] {
@@ -61,6 +62,7 @@ export function saveLocalDayLog(log: DayLog): void {
     date: dateStr,
     onTarget: log.onTarget,
     indulgenceDescription: log.indulgenceDescription,
+    indulgenceTags: log.indulgenceTags,
   };
   if (existing >= 0) logs[existing] = entry;
   else logs.push(entry);
@@ -86,6 +88,7 @@ export function fetchLocalWeekLogs(): WeekData {
       dayIndex,
       onTarget: row.onTarget,
       indulgenceDescription: row.indulgenceDescription,
+      indulgenceTags: row.indulgenceTags || [],
       estimatedConsumption: 0,
     };
   });

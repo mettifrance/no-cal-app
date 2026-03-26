@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { UserProfile, WeekData, fetchWeekLogs, fetchWeeklyReflection, getPreviousWeekStart } from '@/lib/store';
 import { fetchLocalWeekLogs, getLocalCheckInCount, shouldShowLoginPrompt } from '@/lib/localStore';
-import { getCurrentDayIndex, getDayName } from '@/lib/calories';
+import { getCurrentDayIndex } from '@/lib/calories';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getRandomRewardMessage } from './CheckInReward';
+import { t } from '@/lib/i18n';
 import DayCheckIn from './DayCheckIn';
 import MonthlyRhythm from './MonthlyRhythm';
 import WeeklyBalanceCard from './WeeklyBalanceCard';
@@ -14,6 +15,7 @@ import WeekBadge from './WeekBadge';
 import WeeklyStatusMessage from './WeeklyStatusMessage';
 import ReturnTrigger from './ReturnTrigger';
 import WeeklyReflection from './WeeklyReflection';
+import WeeklySummary from './WeeklySummary';
 import InstallPrompt from './InstallPrompt';
 import NotificationPrompt from './NotificationPrompt';
 import EveningBanner from './EveningBanner';
@@ -63,7 +65,6 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   useEffect(() => { loadWeekData(); }, [loadWeekData]);
   useEffect(() => { checkAndMarkStandaloneOnOpen(); }, []);
 
-  // Weekly reflection (only for authenticated users)
   useEffect(() => {
     if (!user) return;
     const { weekStartStr } = getPreviousWeekStart();
@@ -82,7 +83,13 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   const alignedDays = weekData.logs.filter(l => l.onTarget).length;
   const loggedToday = checkedDays.has(currentDayIndex);
 
-  // Install/notification prompts (only for authenticated users)
+  // Collect all tags from this week's sgarri for weekly summary
+  const weekTags = useMemo(() => {
+    return weekData.logs
+      .filter(l => !l.onTarget && l.indulgenceTags)
+      .flatMap(l => l.indulgenceTags || []);
+  }, [weekData.logs]);
+
   useEffect(() => {
     if (loading || !user) return;
     if (isIOS() && !isStandalone()) {
@@ -92,7 +99,6 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
     if (shouldShowNotificationPrompt(totalCheckIns)) setShowNotificationPrompt(true);
   }, [loading, totalCheckIns, user]);
 
-  // Soft login prompt (only for anonymous users)
   useEffect(() => {
     if (loading || user) return;
     const localCount = getLocalCheckInCount();
@@ -117,12 +123,11 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
     return null;
   }, [checkedDays, currentDayIndex]);
 
-  async function handleCheckInComplete() {
+  async function handleCheckInComplete(wasAligned: boolean) {
     await loadWeekData();
     setCheckInDay(null);
-    toast({ description: getRandomRewardMessage() });
+    toast({ description: getRandomRewardMessage(wasAligned) });
 
-    // After check-in, maybe show login prompt for anonymous users
     if (!user) {
       const localCount = getLocalCheckInCount();
       if (shouldShowLoginPrompt(localCount)) {
@@ -138,7 +143,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading your week...</p>
+        <p className="text-muted-foreground">Caricamento...</p>
       </div>
     );
   }
@@ -149,35 +154,32 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
         {/* Header */}
         <div className="flex items-center justify-between pt-4">
           <div>
-            <h1 className="text-2xl font-serif">No More Cal</h1>
-            <p className="text-sm text-muted-foreground">Weekly awareness</p>
+            <h1 className="text-2xl font-serif">{t.dashboardTitle}</h1>
+            <p className="text-sm text-muted-foreground">{t.dashboardSub}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setView('month')} className="text-xs text-muted-foreground underline">Monthly</button>
+            <button onClick={() => setView('month')} className="text-xs text-muted-foreground underline">{t.monthly}</button>
             {user ? (
-              <button onClick={signOut} className="text-xs text-muted-foreground underline">Sign Out</button>
+              <button onClick={signOut} className="text-xs text-muted-foreground underline">{t.signOut}</button>
             ) : (
-              <Button variant="default" size="sm" className="rounded-xl text-xs px-3 py-1 h-auto" onClick={() => setShowLoginPrompt(true)}>Save progress</Button>
+              <Button variant="default" size="sm" className="rounded-xl text-xs px-3 py-1 h-auto" onClick={() => setShowLoginPrompt(true)}>{t.saveProgress}</Button>
             )}
           </div>
         </div>
 
-        {/* Dynamic status message */}
         <WeeklyStatusMessage alignedDays={alignedDays} indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
-
-        {/* Balance card with progress text */}
         <WeeklyBalanceCard alignedDays={alignedDays} indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
         <WeekBadge indulgentDays={indulgentDays} totalCheckedDays={checkedDays.size} />
 
         {/* Week grid */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="space-y-3">
-          <h3 className="text-lg font-serif">This Week</h3>
+          <h3 className="text-lg font-serif">{t.thisWeek}</h3>
           <div className="grid grid-cols-7 gap-2">
             {Array.from({ length: 7 }, (_, i) => {
               const log = weekData.logs.find(l => l.dayIndex === i);
               const isToday = i === currentDayIndex;
               const isFuture = i > currentDayIndex;
-              const dayLabel = getDayName(i).slice(0, 3);
+              const dayLabel = t.dayNamesShort[i];
               return (
                 <button
                   key={i}
@@ -186,7 +188,7 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isToday ? 'ring-2 ring-primary' : ''} ${isFuture ? 'opacity-40' : 'hover:bg-card'}`}
                 >
                   <span className="text-xs text-muted-foreground">{dayLabel}</span>
-                  <span className="text-lg">{log ? (log.onTarget ? '✅' : '🍰') : (isFuture ? '·' : '○')}</span>
+                  <span className="text-lg">{log ? (log.onTarget ? '✅' : '🍕') : (isFuture ? '·' : '○')}</span>
                 </button>
               );
             })}
@@ -197,12 +199,11 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
         {nextUncheckedDay !== null && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
             <Button size="lg" className="w-full rounded-2xl py-6 text-lg" onClick={() => setCheckInDay(nextUncheckedDay)}>
-              Check in for {getDayName(nextUncheckedDay)}
+              {t.checkInFor(t.dayNames[nextUncheckedDay])}
             </Button>
           </motion.div>
         )}
 
-        {/* Return trigger — show when user has logged today */}
         {loggedToday && nextUncheckedDay === null && <ReturnTrigger />}
 
         <AnimatePresence>
@@ -219,10 +220,10 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
               <div key={log.dayIndex} className="bg-card rounded-xl p-4 border">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span>{log.onTarget ? '✅' : '🍰'}</span>
-                    <span className="font-medium">{getDayName(log.dayIndex)}</span>
+                    <span>{log.onTarget ? '✅' : '🍕'}</span>
+                    <span className="font-medium">{t.dayNames[log.dayIndex]}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{log.onTarget ? 'Aligned' : 'Indulgent'}</span>
+                  <span className="text-sm text-muted-foreground">{log.onTarget ? t.giorniOk.replace('Giorni ok', 'Ok') : 'Sgarro'}</span>
                 </div>
                 {log.indulgenceDescription && (
                   <p className="text-sm text-muted-foreground mt-1 ml-8">{log.indulgenceDescription}</p>
@@ -244,9 +245,9 @@ export default function WeeklyDashboard({ profile }: WeeklyDashboardProps) {
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="bg-card rounded-2xl p-5 border border-dashed border-primary/30 text-center space-y-2">
           <div className="text-2xl">✨</div>
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Pro</strong> will suggest meal ideas that fit your lifestyle.
+            <strong className="text-foreground">Pro</strong> {t.proTeaser}
           </p>
-          <p className="text-xs text-muted-foreground">Coming soon</p>
+          <p className="text-xs text-muted-foreground">{t.proSoon}</p>
         </motion.div>
       </div>
 

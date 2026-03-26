@@ -21,6 +21,7 @@ export interface DayLog {
   dayIndex: number;
   onTarget: boolean;
   indulgenceDescription?: string;
+  indulgenceTags?: string[];
   estimatedConsumption: number;
 }
 
@@ -115,7 +116,8 @@ export async function saveDayLogToCloud(userId: string, log: DayLog): Promise<vo
     date: dateStr,
     on_target: log.onTarget,
     indulgence_description: log.indulgenceDescription || null,
-  }, { onConflict: 'user_id,date' });
+    indulgence_tags: log.indulgenceTags || [],
+  } as any, { onConflict: 'user_id,date' });
 
   if (error) throw error;
 }
@@ -145,6 +147,7 @@ export async function fetchWeekLogs(userId: string): Promise<WeekData> {
       dayIndex,
       onTarget: row.on_target,
       indulgenceDescription: row.indulgence_description || undefined,
+      indulgenceTags: (row as any).indulgence_tags || [],
       estimatedConsumption: 0,
     };
   });

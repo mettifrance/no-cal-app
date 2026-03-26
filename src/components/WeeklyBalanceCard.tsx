@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { t } from '@/lib/i18n';
 
 interface WeeklyBalanceCardProps {
   alignedDays: number;
@@ -14,28 +15,22 @@ function getStatus(indulgentDays: number): BalanceStatus {
   return 'red';
 }
 
-const STATUS_CONFIG: Record<BalanceStatus, { color: string; bg: string; message: string }> = {
-  green: {
-    color: 'bg-success',
-    bg: 'bg-success/15',
-    message: "You're in a great rhythm this week.",
-  },
-  yellow: {
-    color: 'bg-warning',
-    bg: 'bg-warning/15',
-    message: 'A bit more flexibility than planned.',
-  },
-  red: {
-    color: 'bg-destructive',
-    bg: 'bg-destructive/15',
-    message: 'This week is drifting away from your goal.',
-  },
-};
-
 export default function WeeklyBalanceCard({ alignedDays, indulgentDays, totalCheckedDays }: WeeklyBalanceCardProps) {
   const status = getStatus(indulgentDays);
-  const config = STATUS_CONFIG[status];
   const progress = totalCheckedDays > 0 ? alignedDays / totalCheckedDays : 0;
+
+  const statusMsg = totalCheckedDays === 0
+    ? t.balanceEmpty
+    : status === 'green' ? t.balanceGreen
+    : status === 'yellow' ? t.balanceYellow
+    : t.balanceRed;
+
+  const statusConfig = {
+    green: { color: 'bg-success', bg: 'bg-success/15' },
+    yellow: { color: 'bg-warning', bg: 'bg-warning/15' },
+    red: { color: 'bg-destructive', bg: 'bg-destructive/15' },
+  };
+  const config = statusConfig[status];
 
   return (
     <motion.div
@@ -43,28 +38,23 @@ export default function WeeklyBalanceCard({ alignedDays, indulgentDays, totalChe
       animate={{ y: 0, opacity: 1 }}
       className="bg-card rounded-2xl p-6 border space-y-4"
     >
-      <div className="text-center">
-        <h2 className="text-lg font-serif mb-1">Weekly Balance</h2>
-      </div>
-
       <div className="flex justify-around text-center">
         <div>
           <div className="text-3xl font-serif text-success">{alignedDays}</div>
-          <div className="text-xs text-muted-foreground">Aligned</div>
+          <div className="text-xs text-muted-foreground">{t.giorniOk}</div>
         </div>
         <div className="w-px bg-border" />
         <div>
           <div className="text-3xl font-serif text-accent">{indulgentDays}</div>
-          <div className="text-xs text-muted-foreground">Indulgent</div>
+          <div className="text-xs text-muted-foreground">{t.sgarri}</div>
         </div>
         <div className="w-px bg-border" />
         <div>
           <div className="text-3xl font-serif text-muted-foreground">{7 - totalCheckedDays}</div>
-          <div className="text-xs text-muted-foreground">Remaining</div>
+          <div className="text-xs text-muted-foreground">{t.daLoggare}</div>
         </div>
       </div>
 
-      {/* Balance bar */}
       <div className={`h-3 rounded-full ${config.bg} overflow-hidden`}>
         <motion.div
           className={`h-full rounded-full ${config.color}`}
@@ -74,24 +64,12 @@ export default function WeeklyBalanceCard({ alignedDays, indulgentDays, totalChe
         />
       </div>
 
-      <p className="text-sm text-center text-muted-foreground">
-        {totalCheckedDays === 0
-          ? 'Check in to start tracking your rhythm.'
-          : config.message}
-      </p>
+      <p className="text-sm text-center text-muted-foreground">{statusMsg}</p>
 
       <div className="text-center space-y-1">
-        <p className="text-sm font-medium text-foreground">
-          {totalCheckedDays} of 7 days logged this week
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {7 - totalCheckedDays > 0
-            ? `${7 - totalCheckedDays} day${7 - totalCheckedDays > 1 ? 's' : ''} left to log this week`
-            : 'All days logged — great consistency!'}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Small daily check-ins → real awareness over time
-        </p>
+        <p className="text-sm font-medium text-foreground">{t.daysLogged(totalCheckedDays)}</p>
+        <p className="text-xs text-muted-foreground">{t.daysLeft(7 - totalCheckedDays)}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t.microCopy}</p>
       </div>
     </motion.div>
   );

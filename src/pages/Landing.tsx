@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { t } from '@/lib/i18n';
 
 const WEEK_DOTS = [
-  { label: 'Mon', status: 'aligned' },
-  { label: 'Tue', status: 'aligned' },
-  { label: 'Wed', status: 'indulgent' },
-  { label: 'Thu', status: 'aligned' },
-  { label: 'Fri', status: 'aligned' },
-  { label: 'Sat', status: 'none' },
-  { label: 'Sun', status: 'none' },
+  { label: 'Lun', status: 'ok' },
+  { label: 'Mar', status: 'ok' },
+  { label: 'Mer', status: 'sgarro' },
+  { label: 'Gio', status: 'ok' },
+  { label: 'Ven', status: 'ok' },
+  { label: 'Sab', status: 'none' },
+  { label: 'Dom', status: 'none' },
 ];
 
 export default function Landing() {
@@ -26,12 +27,10 @@ export default function Landing() {
         {/* Hero */}
         <div className="space-y-4">
           <h1 className="text-4xl md:text-5xl font-serif leading-tight">
-            Stop counting calories.
-            <br />
-            <span className="text-primary">Start understanding your habits.</span>
+            {t.hero}
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Finally understand why your diet doesn't stick — with one simple daily check-in.
+            {t.heroSub}
           </p>
         </div>
 
@@ -42,7 +41,7 @@ export default function Landing() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="bg-card rounded-2xl p-6 border space-y-3"
         >
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Your weekly rhythm</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Il tuo ritmo settimanale</p>
           <div className="flex justify-center gap-4">
             {WEEK_DOTS.map((d, i) => (
               <motion.div
@@ -54,9 +53,9 @@ export default function Landing() {
               >
                 <div
                   className={`w-5 h-5 rounded-full ${
-                    d.status === 'aligned'
+                    d.status === 'ok'
                       ? 'bg-success'
-                      : d.status === 'indulgent'
+                      : d.status === 'sgarro'
                       ? 'bg-accent'
                       : 'bg-muted'
                   }`}
@@ -65,7 +64,7 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">Patterns, not numbers.</p>
+          <p className="text-xs text-muted-foreground">Ritmo, non numeri.</p>
         </motion.div>
 
         {/* Benefits */}
@@ -75,11 +74,7 @@ export default function Landing() {
           transition={{ delay: 0.4 }}
           className="space-y-3 text-left"
         >
-          {[
-            { emoji: '📉', text: 'Lose weight without feeling restricted' },
-            { emoji: '💪', text: 'Build habits for a stronger, healthier body' },
-            { emoji: '⚡', text: '1 simple check-in per day — no tracking needed' },
-          ].map((b) => (
+          {t.bullets.map((b) => (
             <div key={b.text} className="flex items-center gap-3 bg-card/60 rounded-xl p-3 border border-border/50">
               <span className="text-xl">{b.emoji}</span>
               <span className="text-sm text-foreground">{b.text}</span>
@@ -99,13 +94,13 @@ export default function Landing() {
             className="w-full text-lg py-6 rounded-2xl"
             onClick={() => navigate('/onboarding')}
           >
-            Start your first check-in
+            {t.cta}
           </Button>
           <button
             onClick={() => navigate('/login')}
             className="text-sm text-muted-foreground underline"
           >
-            I already have an account
+            {t.ctaSecondary}
           </button>
         </motion.div>
       </motion.div>

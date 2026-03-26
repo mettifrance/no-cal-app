@@ -20,6 +20,7 @@ export type Database = {
           date: string
           id: string
           indulgence_description: string | null
+          indulgence_tags: string[] | null
           on_target: boolean
           user_id: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           date: string
           id?: string
           indulgence_description?: string | null
+          indulgence_tags?: string[] | null
           on_target: boolean
           user_id: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           date?: string
           id?: string
           indulgence_description?: string | null
+          indulgence_tags?: string[] | null
           on_target?: boolean
           user_id?: string
         }

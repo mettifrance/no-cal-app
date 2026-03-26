@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { t } from '@/lib/i18n';
 
 interface EveningBannerProps {
   onDismiss: () => void;
@@ -14,10 +15,10 @@ export default function EveningBanner({ onDismiss }: EveningBannerProps) {
     >
       <div className="flex items-center gap-2">
         <span className="text-lg">🌙</span>
-        <p className="text-sm font-medium">Don't forget to log today</p>
+        <p className="text-sm font-medium">{t.eveningReminder}</p>
       </div>
       <button onClick={onDismiss} className="text-xs text-muted-foreground underline">
-        Dismiss
+        {t.dismiss}
       </button>
     </motion.div>
   );
