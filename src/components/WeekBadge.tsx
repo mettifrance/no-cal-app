@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { t } from '@/lib/i18n';
 
 interface WeekBadgeProps {
   indulgentDays: number;
@@ -8,30 +9,17 @@ interface WeekBadgeProps {
 export default function WeekBadge({ indulgentDays, totalCheckedDays }: WeekBadgeProps) {
   if (totalCheckedDays < 3) return null;
 
-  let emoji: string;
-  let title: string;
-  let subtitle: string;
-  let bgClass: string;
-  let borderClass: string;
+  let emoji: string, title: string, subtitle: string, bgClass: string, borderClass: string;
 
   if (indulgentDays <= 1) {
-    emoji = '🏅';
-    title = 'Balanced Week';
-    subtitle = 'You enjoyed life and stayed consistent.';
-    bgClass = 'bg-success/10';
-    borderClass = 'border-success/30';
+    emoji = '🏅'; title = t.badgeBalanced; subtitle = t.badgeBalancedSub;
+    bgClass = 'bg-success/10'; borderClass = 'border-success/30';
   } else if (indulgentDays <= 3) {
-    emoji = '🙂';
-    title = 'Flexible Week';
-    subtitle = 'A little flexibility is part of real life.';
-    bgClass = 'bg-warning/10';
-    borderClass = 'border-warning/30';
+    emoji = '🙂'; title = t.badgeFlexible; subtitle = t.badgeFlexibleSub;
+    bgClass = 'bg-warning/10'; borderClass = 'border-warning/30';
   } else {
-    emoji = '⚠️';
-    title = 'Off Rhythm Week';
-    subtitle = "More than 2–3 indulgences per week usually makes the goal harder.";
-    bgClass = 'bg-destructive/10';
-    borderClass = 'border-destructive/30';
+    emoji = '⚠️'; title = t.badgeOff; subtitle = t.badgeOffSub;
+    bgClass = 'bg-destructive/10'; borderClass = 'border-destructive/30';
   }
 
   return (

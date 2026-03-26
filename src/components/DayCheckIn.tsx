@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { t } from '@/lib/i18n';
 import { getDayName } from '@/lib/calories';
 import { saveDayLogToCloud } from '@/lib/store';
 import { saveLocalDayLog } from '@/lib/localStore';
@@ -10,19 +11,32 @@ import { useAuth } from '@/contexts/AuthContext';
 interface DayCheckInProps {
   dayIndex: number;
   dailyTarget: number;
-  onComplete: () => void;
+  onComplete: (wasAligned: boolean) => void;
   onClose: () => void;
 }
 
-type CheckInStep = 'question' | 'indulgence' | 'result';
+type CheckInStep = 'question' | 'sgarro' | 'feedback';
 
 export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose }: DayCheckInProps) {
   const { user } = useAuth();
   const [step, setStep] = useState<CheckInStep>('question');
-  const [indulgenceText, setIndulgenceText] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState('');
 
-  async function handleOnTarget() {
+  function pickFeedback(aligned: boolean) {
+    const pool = aligned ? t.feedbackAligned : t.feedbackIndulgent;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function toggleTag(value: string) {
+    setSelectedTags(prev =>
+      prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]
+    );
+  }
+
+  async function handleAligned() {
     setSaving(true);
     const log = { dayIndex, onTarget: true, estimatedConsumption: dailyTarget };
     if (user) {
@@ -31,16 +45,22 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
       saveLocalDayLog(log);
     }
     setSaving(false);
-    onComplete();
+    setFeedbackMsg(pickFeedback(true));
+    setStep('feedback');
   }
 
-  async function handleIndulgenceSubmit() {
-    if (!indulgenceText.trim()) return;
+  async function handleSgarroSubmit() {
     setSaving(true);
+    const description = [
+      selectedTags.join(', '),
+      note.trim(),
+    ].filter(Boolean).join(' — ');
+
     const log = {
       dayIndex,
       onTarget: false,
-      indulgenceDescription: indulgenceText,
+      indulgenceDescription: description || undefined,
+      indulgenceTags: selectedTags,
       estimatedConsumption: dailyTarget,
     };
     if (user) {
@@ -49,7 +69,8 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
       saveLocalDayLog(log);
     }
     setSaving(false);
-    setStep('result');
+    setFeedbackMsg(pickFeedback(false));
+    setStep('feedback');
   }
 
   return (
@@ -70,57 +91,67 @@ export default function DayCheckIn({ dayIndex, dailyTarget, onComplete, onClose 
         {step === 'question' && (
           <>
             <div className="text-center">
-              <h3 className="text-xl font-serif mb-2">{getDayName(dayIndex)}</h3>
-              <p className="text-muted-foreground">Did today feel aligned with your plan?</p>
+              <h3 className="text-xl font-serif mb-2">{t.dayNames[dayIndex]}</h3>
+              <p className="text-muted-foreground text-lg">{t.checkInQuestion}</p>
             </div>
             <div className="space-y-3">
-              <Button size="lg" className="w-full rounded-xl py-5" onClick={handleOnTarget} disabled={saving}>
-                {saving ? 'Saving...' : '✅ Yes, today felt aligned'}
+              <Button size="lg" className="w-full rounded-xl py-5 text-base" onClick={handleAligned} disabled={saving}>
+                {saving ? t.saving : `✅ ${t.checkInAligned}`}
               </Button>
-              <Button size="lg" variant="outline" className="w-full rounded-xl py-5" onClick={() => setStep('indulgence')}>
-                🍰 I had an indulgent meal
+              <Button size="lg" variant="outline" className="w-full rounded-xl py-5 text-base" onClick={() => setStep('sgarro')}>
+                🍕 {t.checkInIndulgent}
               </Button>
             </div>
-            <p className="text-xs text-center text-muted-foreground">Select an option to continue</p>
-            <button onClick={onClose} className="w-full text-center text-sm text-muted-foreground">Skip for now</button>
+            <p className="text-xs text-center text-muted-foreground">{t.selectOption}</p>
+            <button onClick={onClose} className="w-full text-center text-sm text-muted-foreground">Salta per ora</button>
           </>
         )}
 
-        {step === 'indulgence' && (
+        {step === 'sgarro' && (
           <>
             <div className="text-center">
-              <h3 className="text-xl font-serif mb-2">What did you enjoy?</h3>
-              <p className="text-muted-foreground text-sm">No judgment — just a quick note for your awareness.</p>
+              <h3 className="text-xl font-serif mb-2">{t.sgarroFollowUp}</h3>
             </div>
-            <Input
-              placeholder="e.g. pizza night, restaurant dinner..."
-              value={indulgenceText}
-              onChange={(e) => setIndulgenceText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleIndulgenceSubmit()}
-              className="rounded-xl h-12 text-lg"
-              autoFocus
+            <div className="flex flex-wrap gap-2 justify-center">
+              {t.sgarroTags.map(tag => (
+                <button
+                  key={tag.value}
+                  onClick={() => toggleTag(tag.value)}
+                  className={`px-4 py-2 rounded-full border text-sm transition-all ${
+                    selectedTags.includes(tag.value)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-card border-border hover:border-primary/40'
+                  }`}
+                >
+                  {tag.emoji} {tag.label}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              placeholder={t.sgarroPlaceholder}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="rounded-xl min-h-[60px] text-sm resize-none"
             />
+            <p className="text-xs text-muted-foreground text-center italic">es. "{t.sgarroHint}"</p>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep('question')} className="rounded-xl">Back</Button>
-              <Button onClick={handleIndulgenceSubmit} disabled={!indulgenceText.trim() || saving} className="flex-1 rounded-xl">
-                {saving ? 'Saving...' : 'Log It'}
+              <Button variant="outline" onClick={() => setStep('question')} className="rounded-xl">{t.back}</Button>
+              <Button onClick={handleSgarroSubmit} disabled={saving} className="flex-1 rounded-xl">
+                {saving ? t.saving : t.sgarroConfirm}
               </Button>
             </div>
           </>
         )}
 
-        {step === 'result' && (
+        {step === 'feedback' && (
           <>
-            <div className="text-center">
-              <div className="text-4xl mb-3">🌿</div>
-              <h3 className="text-xl font-serif mb-2">Noted!</h3>
+            <div className="text-center space-y-3">
+              <div className="text-4xl">🌿</div>
+              <p className="text-lg font-serif">{feedbackMsg}</p>
             </div>
-            <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
-              <p className="text-sm text-center leading-relaxed">
-                A little flexibility is part of real life. What matters is your overall weekly rhythm. 💪
-              </p>
-            </div>
-            <Button size="lg" className="w-full rounded-xl" onClick={onComplete}>Done</Button>
+            <Button size="lg" className="w-full rounded-xl" onClick={() => onComplete(!selectedTags.length && step === 'feedback')}>
+              Ok
+            </Button>
           </>
         )}
       </motion.div>
