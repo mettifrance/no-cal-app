@@ -2,16 +2,18 @@
 
 const it = {
   // Landing
-  hero: "Ho sgarrato. E allora?",
-  heroSub: "Qui non contiamo calorie. Capisci come mangi, senza stress.",
+  hero: "Hai sgarrato.\nE allora?",
+  heroSub: "Il problema non è lo sgarro. È il senso di colpa dopo.",
   bullets: [
-    { emoji: '🍕', text: 'Niente calorie da contare. Solo una domanda: oggi com\'è andata?' },
-    { emoji: '🤝', text: 'Sgarri? Raccontali a me. Non giudico, ti capisco.' },
-    { emoji: '⚖️', text: 'Equilibrio vero: un po\' di pizza, un po\' di palestra, zero sensi di colpa.' },
-    { emoji: '🎯', text: 'I tuoi obiettivi li raggiungi senza odiarti.' },
+    { emoji: '🍕', text: 'Niente calorie. Solo: oggi com\'è andata davvero?' },
+    { emoji: '🤝', text: 'Sgarri? Ok. Raccontali a me, niente giudizi.' },
+    { emoji: '😏', text: 'Un po\' pizza, un po\' palestra. È così che funziona.' },
+    { emoji: '🧠', text: 'Capisci perché sgari, invece di sentirti in colpa.' },
+    { emoji: '🎯', text: 'Migliori il tuo fisico senza diventare ossessivo.' },
   ],
-  cta: 'Inizia',
+  cta: 'Partiamo',
   ctaSecondary: 'Ho già un account',
+  ctaMicro: 'Tranquillo: non ti giudico.',
 
   // Check-in
   checkInQuestion: "Oggi com'è andata?",
